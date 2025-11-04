@@ -15,7 +15,7 @@ sigma_e=0.2;
 % set number of theta grids
 n_theta=7;
 % define bounds of theta grid in terms of standard deviations
-m=1.645;    %will update probably, but 1.645 is roughly 90%, 196 is 95%                                      
+m=1.96;    %will update probably, but 1.645 is roughly 90%, 1.96 is 95%                                      
 
 [logtheta, Pr_theta]=tauchen(n_theta, rho, sigma_e, m);
 
@@ -26,9 +26,9 @@ m=1.645;    %will update probably, but 1.645 is roughly 90%, 196 is 95%
 
 n_a=350; % will adjust this later
 
-ub_a=10; % upper bound is placeholder
+ub_a=exp(m); % upper bound is placeholder
 
-a_grid=linspace(0, ub_a, n_a); % lower bound is 0 by condition of model
+a_grid=linspace(0, sqrt(ub_a), n_a).^2; % lower bound is 0 by condition of model
 % labour grid
 n_l=100;
 l_grid=linspace(0.01,0.99, n_l); % end at 0.99 to avoid dividing by zero
@@ -128,12 +128,12 @@ function [a_star, c_star, l_star, v_star]= EGM(tc, ty, b, s, g, thetas, p_thetas
             end
             for i_a=1:n_a   % iterate over choice grid
                 RHS=b*(1+r*(1-ty))*MU_p(i_a);   %RHS of Euler Equation
-                RHS_U=b*(1+r*(1-ty))*U_p(i_a);  %Storing this to recover Value function
+                RHS_U=1/(b*(1+r*(1-ty)))*U_p(i_a);  %Storing this to recover Value function
                 % solve FOCs
                 l_guess=n(i_a, i_t);
                 dist_l=Inf; %want to solve for fixed point
                 j=0;%        want to break loop in testing
-                lambda=0.3; %smoothing parameter
+                lambda=0.1; %smoothing parameter
                 while dist_l>tol
                     coef_c=g*(1-l_guess)^((1-s)*(1-g));
                     c_euler(i_a)=(RHS/coef_c)^(1/exp_c);
@@ -148,13 +148,14 @@ function [a_star, c_star, l_star, v_star]= EGM(tc, ty, b, s, g, thetas, p_thetas
                     end % max iterations
                 end % intratemporal optimization
                 % back out wealth from budget constaint
-                a_euler(i_a)=((1+tc)*c_euler(i_a)+a_grid(i_a)-(1-ty)*w*t*l_euler(i_a))/(1+r*(1-ty));
+                a_euler(i_a)=((1+tc)*c_euler(i_a)+a_grid(i_a)-(1-ty)*w*t*l_guess)/(1+r*(1-ty));
             end % finishing making functions for current wealth
             for i_a=1:n_a   % need to interpolate
                 a=a_grid(i_a);
-                c_opt=max(interp1(a_euler, c_euler, a, 'linear', 'extrap'), 1e-8);% consumption must be positive;
-                l_opt=max(min(interp1(a_euler, l_euler, a, 'linear', 'extrap'), 0.9999), 0.0);
                 a_opt=max(min(interp1(a_euler, a_grid, a, 'linear', 'extrap'), a_grid(n_a)), a_grid(1));
+                c_opt=max(interp1(a_euler, c_euler, a_opt, 'linear', 'extrap'), 1e-8);% consumption must be positive;
+                l_opt=max(min(interp1(a_euler, l_euler, a_opt, 'linear', 'extrap'), 0.9999), 0.0);
+
                 % Compute value function
                 V_opt=U(c_opt, l_opt)+RHS_U;
 
