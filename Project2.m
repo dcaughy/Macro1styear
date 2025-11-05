@@ -53,40 +53,10 @@ a_grid=linspace(0, ub_a, n_a); % lower bound is 0 by condition of model
 %w_market=(1-alpha)*(K/L)^alpha;
 
 %% Solve Benchmark Model
-%define ub and lb of interest rates
-r_lo=0;
-r_hi=1;
-% initialize distance
-dist_KL=Inf;
-i=0;    %keep track of iterations
-while dist_KL>1e-4   % start a bisection search
-    i=i+1   % want this printed
-    r_init=(r_lo+r_hi)/2;
-    %back out implied capital per labour from initial interest rate
-    KLs=((delta+r_init)/alpha)^(1/(alpha-1));
-    w_init=(1-alpha)*KLs^(-alpha);
-    %already have theta and a grids
-    %denote b as benchmark economy
-    [ab,cb,lb]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r_init, w_init, 1e-4);
-    pb=distribution(a_grid, ab, Pr_theta, 1e-4);
-    [Kb,Lb,Cb,Gb]=aggregates(ab, lb, cb, pb, logtheta, tau_y, tau_c, delta, alpha);
+[a_b,c_b,l_b,v_b, G_b, r_b, w_b, psi_b] = solve_model(a_grid,logtheta, Pr_theta, tau_c, tau_y, delta, alpha, beta, gamma, sigma);
 
-    r_star=alpha*(Kb/Lb)^(alpha-1)-delta;   
-    w_star=(1-alpha)*(Kb/Lb)^(-alpha);   % only keeping this because I want the number
-    z= Kb/Lb-KLs;   %markets clear if z=0
-    dist_KL=abs(z);
-    
-    %direction of interest rate change
-    if z>0  %excess demand for investment
-        r_hi=r_init;    %lower the interest rate
-    elseif z<0  %excess supply
-        r_lo=r_init;    % raise interest rate
-    end % last case is markets clear
-    if i>40
-        break   %want maximum number of iterations
-    end
-end
-
+%% Solve Proposal Economy
+[a_r,c_r,l_r,v_r, r_r, w_r, tau_r, psi_r] = solve_reform(a_grid,logtheta, Pr_theta, delta, alpha, beta, gamma, sigma,G_b);
 
 
 
@@ -295,6 +265,137 @@ function [K,L,C,G] = aggregates(a, n, x, psi, theta, ty, tc,d,alpha)
     Y=K^alpha*L^(1-alpha);
     G=ty*(Y-K*d)+tc*C;
 end
+
+%% Recover Value Function
+function [V]= recover_value(a_grid, a_star, c_star, l_star, b, g, s, Ptheta)
+    % Define Utility function
+    U=@(c,l) ((c^g*(1-l)^(1-g))^(1-s))/(1-s);
+    %initialize values
+    dist=Inf;
+    [na, nt]=size(a_star);
+    %make initial guess
+    V_0=zeros(na,nt);
+    for i=1:na 
+        for j=1:nt 
+            V_0(i,j)=U(c_star(i,j), l_star(i,j));
+        end
+    end
+    %take expectation
+    EV=V_0*Ptheta';
+    i=0; % start counting iterations
+    while dist>1e-4
+        Tv=zeros(na, nt);   %Bellman operator
+        i=i+1;
+        for it=1:nt 
+            for ia=1:na
+                Tv(ia,it)=U(c_star(ia, it), l_star(ia,it))+...  % initial utility from policy functions
+                    b*interp1(a_grid, EV(:,it), a_star(ia,it)); % expected utility from policy functions
+                % a_grid is the a_p choice in current period given value
+                % a_star. EV is the expected utlity from that transition
+            end
+        end
+        dist=norm(Tv-V_0,Inf);
+        V_0=Tv;  %update
+        if i>100
+            break
+        end
+    end
+    V=Tv;
+end
+function [a,c,l,v, G, r, w, psi] = solve_model(a_grid,logtheta, Pr_theta, tau_c, tau_y, delta, alpha, beta, gamma, sigma)
+    %define ub and lb of interest rates
+    r_lo=0;
+    r_hi=1;
+    % initialize distance
+    z=Inf;
+    i=0;    %keep track of iterations
+    while abs(z)>1e-4   % start a bisection search
+        i=i+1;   % no longer want this printed
+        r_init=(r_lo+r_hi)/2;
+        %back out implied capital per labour from initial interest rate
+        KLs=((delta+r_init)/alpha)^(1/(alpha-1));
+        w_init=(1-alpha)*KLs^(-alpha);
+        %already have theta and a grids
+        %denote b as benchmark economy
+        [ab,cb,lb]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r_init, w_init, 1e-4);
+        pb=distribution(a_grid, ab, Pr_theta, 1e-4);
+        [Kb,Lb,Cb,Gb]=aggregates(ab, lb, cb, pb, logtheta, tau_y, tau_c, delta, alpha);
+
+        r_star=alpha*(Kb/Lb)^(alpha-1)-delta;   
+        w_star=(1-alpha)*(Kb/Lb)^(-alpha);   % only keeping this because I want the number
+        z= Kb/Lb-KLs;   %markets clear if z=0
+    
+    %direction of interest rate change
+        if z>0  %excess demand for investment
+            r_hi=r_init;    %lower the interest rate
+        elseif z<0  %excess supply
+            r_lo=r_init;    % raise interest rate
+        end % last case is markets clear
+        if i>40
+            break   %want maximum number of iterations
+        end
+
+    end
+    v=recover_value(a_grid, ab, cb, lb, beta, gamma, sigma, Pr_theta);
+    a=ab;
+    c=cb;
+    l=lb;
+    G=Gb;
+    r=r_star;
+    w=w_star;
+    psi=pb;
+end
+
+%% Tax Reform
+function [a,c,l,v, r, w, tau_c, psi] = solve_reform(a_grid,logtheta, Pr_theta, delta, alpha, beta, gamma, sigma,G)
+        %start by initializing grid of potential tau_c solutions
+        ntau=15;    %number of potential solutions
+        tau_grid=linspace(0,1, ntau);       
+        dist=G;
+        j=1;    %start the index
+        while dist>0 && j<ntau  %This part is becuase I'm assume that government revenue is not strictly increasing in tau_c
+            % that is, I expect some sort of laffer curve behavior
+            [ar,cr,lr,vr, Gr, rr, wr, psir] = solve_model(a_grid,logtheta, Pr_theta, tau_grid(j), 0, delta, alpha, beta, gamma, sigma);
+            dist=G-Gr;
+            j=j+1;   % Want to print this to see what range we wind up in
+            fprintf("On grid search iteration %d , Tax rate is %.4f , and budget is %.4f \n", j,tau_grid(j), Gr)
+        end % at this point last dist is positive, current dist is negative
+        tau_hi=tau_grid(j);
+        tau_lo=tau_grid(j-1);
+        k=0;
+        while abs(dist)>1e-4
+            k=k+1;   %want to see how many iterations
+            tau_mid=(tau_lo+tau_hi)/2;
+            [ar,cr,lr,vr, Gr, rr, wr, psir] = solve_model(a_grid,logtheta, Pr_theta, tau_mid, 0, delta, alpha, beta, gamma, sigma);
+            dist=G-Gr;
+            fprintf("On bisection search iteration %d , Tax rate is %.4f , and budget is %.4f \n", k,tau_mid, Gr)
+            if dist>0
+                tau_lo=tau_mid;
+            elseif dist<0
+                tau_hi=tau_mid;
+            end
+            if k>40
+                break
+            end
+        end
+        a=ar;
+        c=cr;
+        l=lr;
+        v=vr;
+        r=rr;
+        w=wr;
+        tau_c=tau_mid;
+        psi=psir;
+
+end
+
+
+
+
+
+                
+                
+
 
 
 
