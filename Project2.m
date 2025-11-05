@@ -4,7 +4,7 @@ clear all; clc
 tau_c=0.075;
 tau_y=0.30;
 beta=0.96;
-sigma=0.2;
+sigma=2.0;
 gamma=0.4;
 alpha=0.4;
 delta=0.05;
@@ -26,7 +26,7 @@ m=1.96;    %will update probably, but 1.645 is roughly 90%, 1.96 is 95%
 
 
 
-ub_a=1.5; % upper bound is placeholder
+ub_a=exp(m); % upper bound is placeholder
 n_a=350; % will adjust this later
 
 a_grid=linspace(0, ub_a, n_a); % lower bound is 0 by condition of model
@@ -82,7 +82,7 @@ function [a_star, c_star, l_star]= EGM(tc, ty, b, s, g, thetas, p_thetas, a_grid
     n_t=length(thetas);
     %create initial guesses
     x_a=ones(n_a, n_t);     %start with consumption being positive
-    n=0.5*ones(n_a, n_t);   % and labour being weakly positive
+    n=0.3*ones(n_a, n_t);   % and labour being weakly positive
     g_a=zeros(n_a, n_t);    % this is just a place holder, guess of capital is given by a_grid
     % initialize distance
     dist_c=Inf;
