@@ -33,24 +33,62 @@ a_grid=linspace(0, ub_a, n_a); % lower bound is 0 by condition of model
 
 %% Initial rental rate and wage
 % this is a guess
-r=(1/beta-1);
+%r=(1/beta-1);
 % given by FOCs
-w=(1-alpha)*((delta+r)/alpha)^(alpha/(1-alpha));
+%w=(1-alpha)*((delta+r)/alpha)^(alpha/(1-alpha));
 
 %% Test EGM
 
-[a,c,l]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r, w, 1e-4);
+%[a,c,l]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r, w, 1e-4);
 
 %% Test Stationary Distribution
 
-p=distribution(a_grid, a, Pr_theta, 1e-4);
+%p=distribution(a_grid, a, Pr_theta, 1e-4);
 
 %% Test Market Clearing
 
-[K,L,C,G]=aggregates(a, l, c, p, logtheta, tau_y, tau_c, delta, alpha);
+%[K,L,C,G]=aggregates(a, l, c, p, logtheta, tau_y, tau_c, delta, alpha);
 
-r_market=alpha*(K/L)^(alpha-1)-delta;
-w_market=(1-alpha)*(K/L)^alpha;
+%r_market=alpha*(K/L)^(alpha-1)-delta;
+%w_market=(1-alpha)*(K/L)^alpha;
+
+%% Solve Benchmark Model
+%define ub and lb of interest rates
+r_lo=0;
+r_hi=1;
+% initialize distance
+dist_KL=Inf;
+i=0;    %keep track of iterations
+while dist_KL>1e-4   % start a bisection search
+    i=i+1   % want this printed
+    r_init=(r_lo+r_hi)/2;
+    %back out implied capital per labour from initial interest rate
+    KLs=((delta+r_init)/alpha)^(1/(alpha-1));
+    w_init=(1-alpha)*KLs^(-alpha);
+    %already have theta and a grids
+    %denote b as benchmark economy
+    [ab,cb,lb]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r_init, w_init, 1e-4);
+    pb=distribution(a_grid, ab, Pr_theta, 1e-4);
+    [Kb,Lb,Cb,Gb]=aggregates(ab, lb, cb, pb, logtheta, tau_y, tau_c, delta, alpha);
+
+    r_star=alpha*(Kb/Lb)^(alpha-1)-delta;   
+    w_star=(1-alpha)*(Kb/Lb)^(-alpha);   % only keeping this because I want the number
+    z= Kb/Lb-KLs;   %markets clear if z=0
+    dist_KL=abs(z);
+    
+    %direction of interest rate change
+    if z>0  %excess demand for investment
+        r_hi=r_init;    %lower the interest rate
+    elseif z<0  %excess supply
+        r_lo=r_init;    % raise interest rate
+    end % last case is markets clear
+    if i>40
+        break   %want maximum number of iterations
+    end
+end
+
+
+
 
 %% tauchen method;
 function [theta, Pr_theta] = tauchen(n, p, sigma, m)
@@ -94,7 +132,7 @@ function [a_star, c_star, l_star]= EGM(tc, ty, b, s, g, thetas, p_thetas, a_grid
     exp_c=(1-s)*g-1;
     i=0;
     while dist_c>tol
-        i=i+1 % keep track of iterations
+        i=i+1; % keep track of iterations
         % create updated guess
         Tx=zeros(n_a, n_t);
         Tn=zeros(n_a, n_t);
@@ -211,7 +249,7 @@ function [v] = distribution(a_p, a, transitions, tol)% takes a_grid, a_star, and
     dist_p=Inf;
     i=0;    % keep track of number of iterations
     while dist_p>tol   %find fixed point
-        i=i+1
+        i=i+1;
         Tpsi=zeros(n_a, n_t);   %next guess
         for ia=1:n_a    %iterate over wealth
             for it=1:n_t    %iterate over shocks
@@ -234,6 +272,8 @@ function [v] = distribution(a_p, a, transitions, tol)% takes a_grid, a_star, and
     end % have convergence
     v=psi;
 end
+
+%% Get Aggregates
 
 function [K,L,C,G] = aggregates(a, n, x, psi, theta, ty, tc,d,alpha)
     %get dimensions
