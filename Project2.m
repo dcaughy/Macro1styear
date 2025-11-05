@@ -24,25 +24,33 @@ m=1.96;    %will update probably, but 1.645 is roughly 90%, 1.96 is 95%
 % start with next period investment
 % number of grid spaces
 
+
+
+ub_a=1.5; % upper bound is placeholder
 n_a=350; % will adjust this later
 
-ub_a=exp(m); % upper bound is placeholder
-
-a_grid=linspace(0, sqrt(ub_a), n_a).^2; % lower bound is 0 by condition of model
-% labour grid
-n_l=100;
-l_grid=linspace(0.01,0.99, n_l); % end at 0.99 to avoid dividing by zero
+a_grid=linspace(0, ub_a, n_a); % lower bound is 0 by condition of model
 
 %% Initial rental rate and wage
 % this is a guess
-r=(1/beta-1)*(1-tau_y);
+r=(1/beta-1);
 % given by FOCs
 w=(1-alpha)*((delta+r)/alpha)^(alpha/(1-alpha));
 
 %% Test EGM
 
-[a,c,l,v]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, l_grid, r, w, 1e-4);
+[a,c,l]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r, w, 1e-4);
 
+%% Test Stationary Distribution
+
+p=distribution(a_grid, a, Pr_theta, 1e-4);
+
+%% Test Market Clearing
+
+[K,L,C,G]=aggregates(a, l, c, p, logtheta, tau_y, tau_c, delta, alpha);
+
+r_market=alpha*(K/L)^(alpha-1)-delta;
+w_market=(1-alpha)*(K/L)^alpha;
 
 %% tauchen method;
 function [theta, Pr_theta] = tauchen(n, p, sigma, m)
@@ -68,20 +76,18 @@ end
 
 %% EGM
 
-function [a_star, c_star, l_star, v_star]= EGM(tc, ty, b, s, g, thetas, p_thetas, a_grid, l_grid, r, w, tol)
+function [a_star, c_star, l_star]= EGM(tc, ty, b, s, g, thetas, p_thetas, a_grid, r, w, tol)
     %extract grid lengths
     n_a=length(a_grid);
     n_t=length(thetas);
     %create initial guesses
     x_a=ones(n_a, n_t);     %start with consumption being positive
-    n=0.0*ones(n_a, n_t);   % and labour being weakly positive
+    n=0.5*ones(n_a, n_t);   % and labour being weakly positive
     g_a=zeros(n_a, n_t);    % this is just a place holder, guess of capital is given by a_grid
     % initialize distance
     dist_c=Inf;
     % Define Marginal Utility function wrt consumption
     MU = @(c,l) c^((1-s)*g-1)*g*(1-l)^((1-s)*(1-g));
-    % Define the Utility Function
-    U = @(c,l) ((c^g*(1-l)^(1-g))^(1-s))/(1-s);
     % define consumption from budget constraint
     BC = @(l, a, ap, t) ((1-ty)*w*t*l+(1+r*(1-ty))*a-ap)/(1+tc);
     % save this here so that it's not calculated hundreds of times
@@ -93,19 +99,15 @@ function [a_star, c_star, l_star, v_star]= EGM(tc, ty, b, s, g, thetas, p_thetas
         Tx=zeros(n_a, n_t);
         Tn=zeros(n_a, n_t);
         Tg=zeros(n_a, n_t);
-        % Want to store value function
-        Tv=zeros(n_a, n_t);
         % create expected value next period
         for i_t=1:n_t
             t=exp(thetas(i_t)); %extract value of theta
             MU_p=zeros(n_a, 1); %store marginal utilities
-            U_p=zeros(n_a,1);   % store utilities
             c_euler=zeros(n_a, 1);   %store consumption
             l_euler=zeros(n_a, 1);   % labour
             a_euler=zeros(n_a, 1);   % and investment
             for i_a=1:n_a   %this loop is just to get RHS of Euler equation
                 E_MU=0;  % store expected RHS
-                EU_p=0;  % store expected value function
                 for j_t=1:n_t  %iterate over stochastic transitions
                     %c_p=x_a(i_a, i_t);  %assumed level of consumption
                     l_p=n(i_a, j_t);    %assumed level of labour
@@ -116,24 +118,19 @@ function [a_star, c_star, l_star, v_star]= EGM(tc, ty, b, s, g, thetas, p_thetas
                     c_guess= BC(l_p, a_p, a_pp, exp(thetas(j_t))); %this should be weakly positive
                     %if not
                     c_p=max(c_guess, 0.0001); % consumption needs to be strictly positive
-
-                    %c_p=x_a(i_a, j_t);
                     % add marginal utility to expected discounted by
                     % transition probability
                     E_MU=E_MU+p_thetas(i_t, j_t)*MU(c_p,l_p);
-                    EU_p=EU_p+p_thetas(i_t, j_t)*U(c_p,l_p);
                 end %transitions
                 MU_p(i_a)=E_MU;  % store MU part of RHS
-                U_p(i_a)=EU_p;
             end
             for i_a=1:n_a   % iterate over choice grid
                 RHS=b*(1+r*(1-ty))*MU_p(i_a);   %RHS of Euler Equation
-                RHS_U=1/(b*(1+r*(1-ty)))*U_p(i_a);  %Storing this to recover Value function
                 % solve FOCs
                 l_guess=n(i_a, i_t);
                 dist_l=Inf; %want to solve for fixed point
                 j=0;%        want to break loop in testing
-                lambda=0.1; %smoothing parameter
+                lambda=0.3; %smoothing parameter
                 while dist_l>tol
                     coef_c=g*(1-l_guess)^((1-s)*(1-g));
                     c_euler(i_a)=(RHS/coef_c)^(1/exp_c);
@@ -143,7 +140,7 @@ function [a_star, c_star, l_star, v_star]= EGM(tc, ty, b, s, g, thetas, p_thetas
                     dist_l=abs(l_guess-l_euler(i_a));
                     l_guess=lambda*l_guess+(1-lambda)*l_euler(i_a);
                     j=j+1;
-                    if j>100
+                    if j>80
                         break
                     end % max iterations
                 end % intratemporal optimization
@@ -152,16 +149,13 @@ function [a_star, c_star, l_star, v_star]= EGM(tc, ty, b, s, g, thetas, p_thetas
             end % finishing making functions for current wealth
             for i_a=1:n_a   % need to interpolate
                 a=a_grid(i_a);
-                a_opt=max(min(interp1(a_euler, a_grid, a, 'linear', 'extrap'), a_grid(n_a)), a_grid(1));
-                c_opt=max(interp1(a_euler, c_euler, a_opt, 'linear', 'extrap'), 1e-8);% consumption must be positive;
-                l_opt=max(min(interp1(a_euler, l_euler, a_opt, 'linear', 'extrap'), 0.9999), 0.0);
+                a_opt=max(min(interp1(a_euler, a_grid, a, 'linear', 'extrap'), a_grid(n_a)), a_grid(1));    %clamp to grid
+                c_opt=max(interp1(a_euler, c_euler, a, 'linear', 'extrap'), 1e-8);% consumption must be positive;
+                l_opt=max(min(interp1(a_euler, l_euler, a, 'linear', 'extrap'), 0.9999), 0.0);  %clamp to grid
 
-                % Compute value function
-                V_opt=U(c_opt, l_opt)+RHS_U;
 
                 % store Coleman operator
                 Tx(i_a, i_t)=c_opt;
-                Tv(i_a, i_t)=V_opt;
                 Tg(i_a, i_t)=a_opt;
                 Tn(i_a, i_t)=l_opt;
             end     %over investment
@@ -169,23 +163,113 @@ function [a_star, c_star, l_star, v_star]= EGM(tc, ty, b, s, g, thetas, p_thetas
         
         dist_c=norm(x_a-Tx, Inf);
         x_a=Tx;
+        g_a=Tg;
         n=Tn;
         %g_a=Tg;
-        if i>500
+        if i>1000
             break
         end
     end %convergence
     c_star=Tx;
     a_star=Tg;
     l_star=Tn;
-    v_star=Tv;
 end
+
+%% Stationary Distribution
+
+function [v] = distribution(a_p, a, transitions, tol)% takes a_grid, a_star, and Pr_theta
+    
+    %extract grid lengths
+    [n_a, n_t]=size(a);
+    % need to find where wealth points to in transitions
+    Idx_at=zeros(n_a, n_t); % matrix of index pointers
+    Wgt_at=zeros(n_a, n_t); % matrix of weights to divide wealth
+    for ia=1:n_a    %iterate over investment grid
+        for it=1:n_t    % iterate over shocks
+            g = a(ia, it); % This investment policy of person at wealth ia at shock it
+            if g<a_p(1)     % if lower than lower bound of grid
+                Idx_at(ia, it)=1;   %point to lower bound of grid
+                Wgt_at(ia,it)=1;     % assign full weight
+            elseif g> a_p(n_a)      %if above upper bound
+                Idx_at(ia,it)=n_a;   % point to upper bound
+                Wgt_at(ia,it)=1;     %assign full weight
+            else
+                i=1;    %start count (already checked 1)
+                while a_p(i+1)<g    % no need for bounds since they are the other part of if
+                    i=i+1;  %keep looking
+                end
+            end % at this point we found the infemum
+            Idx_at(ia,it)=i;    % point at infemum
+            ap_i=a_p(i);
+            ap_i2=a_p(i+1);
+            Wgt_at(ia, it)=(ap_i2-g)/(ap_i2-ap_i);
+        end % shocks
+    end     % grid
+    %at this point we have matrix of transition locations and weights
+    psi=ones(n_a,n_t)/(n_a*n_t);  % initial guess is uniform distribution
+
+    dist_p=Inf;
+    i=0;    % keep track of number of iterations
+    while dist_p>tol   %find fixed point
+        i=i+1
+        Tpsi=zeros(n_a, n_t);   %next guess
+        for ia=1:n_a    %iterate over wealth
+            for it=1:n_t    %iterate over shocks
+                to=Idx_at(ia,it);        % want where this person goes
+                wgt=Wgt_at(ia,it);      % want the weight
+                for jt=1:n_t    % iterate over path
+                    Tpsi(to, jt)= Tpsi(to,jt) + ...    %add to what we have
+                        wgt*...                        % the weight
+                        psi(ia,it)*...                 % the mass of being in ia it
+                        transitions(it,jt);            % probability of going from it to jt
+                    Tpsi(to+1, jt) = Tpsi(to+1, jt) + ...
+                        (1-wgt)*...
+                        psi(ia, it)* ...
+                        transitions(it, jt);
+                end
+            end
+        end% done updating
+        dist_p=norm(Tpsi-psi, Inf);
+        psi=Tpsi;
+    end % have convergence
+    v=psi;
+end
+
+function [K,L,C,G] = aggregates(a, n, x, psi, theta, ty, tc,d,alpha)
+    %get dimensions
+    [na,nt]=size(a);
+    k=0;
+    l=0;
+    c=0;
+    for i=1:na
+        for j=1:nt
+            t=exp(theta(j));
+            k=k+a(i,j)*psi(i,j);
+            l=l+t*n(i,j)*psi(i,j);
+            c=c+x(i,j)*psi(i,j);
+        end
+    end
+    K=k;
+    L=l;
+    C=c;
+    Y=K^alpha*L^(1-alpha);
+    G=ty*(Y-K*d)+tc*C;
+end
+
+
+
+
+
+
+
+
+
               
 
 
 
             
-    
+
 
 
 
