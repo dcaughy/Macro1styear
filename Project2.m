@@ -27,20 +27,20 @@ m=icdf('normal', 1-cv/2, 0, 1);   %will update probably, but 1.645 is roughly 90
 
 
 
-ub_a=exp(m)*1.2; % upper bound is placeholder     Currently twice the highest amount of labour productivity
+ub_a=exp(m)*2; % upper bound is placeholder
 n_a=500; % will adjust this later 
 %non-linear grid because density is highest in the poorer regions
 a_grid=linspace(0, sqrt(ub_a), n_a).^2; % lower bound is 0 by condition of model
 
 %% Initial rental rate and wage
 % this is a guess
-%r=(1/beta-1);
+r=0.10;
 % given by FOCs
-%w=(1-alpha)*((delta+r)/alpha)^(alpha/(1-alpha));
+w=(1-alpha)*((delta+r)/alpha)^(alpha/(1-alpha));
 
 %% Test EGM
 
-%[a,c,l]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r, w, 1e-4);
+[a,c,l]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r, w, 1e-4);
 
 %% Test Stationary Distribution
 
@@ -93,7 +93,7 @@ function [a_star, c_star, l_star]= EGM(tc, ty, b, s, g, thetas, p_thetas, a_grid
     n_a=length(a_grid);
     n_t=length(thetas);
     %create initial guesses
-    x_a=ones(n_a, n_t);     %start with consumption being positive
+    x_a=zeros(n_a, n_t);     %Will fill this shortly
     n=0.3*ones(n_a, n_t);   % and labour being weakly positive
     g_a=zeros(n_a, n_t);    % this is just a place holder, guess of capital is given by a_grid
     % initialize distance
@@ -104,6 +104,13 @@ function [a_star, c_star, l_star]= EGM(tc, ty, b, s, g, thetas, p_thetas, a_grid
     BC = @(l, a, ap, t) ((1-ty)*w*t*l+(1+r*(1-ty))*a-ap)/(1+tc);
     % save this here so that it's not calculated hundreds of times
     exp_c=(1-s)*g-1;
+    lambda_l=0.3; %smoothing parameter
+    lambda_t=0.5;
+    for i=1:n_a %set initial consumption guess to be coh
+        for j=1:n_t
+            x_a(i,j)=BC(n(i,j), a_grid(i), g_a(i,j), exp(thetas(j)));
+        end
+    end
     i=0;
     while dist_c>tol
         i=i+1; % keep track of iterations
@@ -121,15 +128,8 @@ function [a_star, c_star, l_star]= EGM(tc, ty, b, s, g, thetas, p_thetas, a_grid
             for i_a=1:n_a   %this loop is just to get RHS of Euler equation
                 E_MU=0;  % store expected RHS
                 for j_t=1:n_t  %iterate over stochastic transitions
-                    %c_p=x_a(i_a, i_t);  %assumed level of consumption
+                    c_p=x_a(i_a,j_t);   %assumed level of consumption
                     l_p=n(i_a, j_t);    %assumed level of labour
-                    a_p=a_grid(i_a);     %assumed level of wealth in this period
-
-                    a_pp=g_a(i_a, j_t);  %assumed level of future investment
-                    %back out consumption from budget constraint
-                    c_guess= BC(l_p, a_p, a_pp, exp(thetas(j_t))); %this should be weakly positive
-                    %if not
-                    c_p=max(c_guess, 0.0001); % consumption needs to be strictly positive
                     % add marginal utility to expected discounted by
                     % transition probability
                     E_MU=E_MU+p_thetas(i_t, j_t)*MU(c_p,l_p);
@@ -137,47 +137,47 @@ function [a_star, c_star, l_star]= EGM(tc, ty, b, s, g, thetas, p_thetas, a_grid
                 MU_p(i_a)=E_MU;  % store MU part of RHS
             end
             for i_a=1:n_a   % iterate over choice grid
-                RHS=b*(1+r*(1-ty))*MU_p(i_a);   %RHS of Euler Equation
+                RHS=b*(1+r*(1-ty))/(1+tc)*MU_p(i_a);   %RHS of Euler Equation
                 % solve FOCs
                 l_guess=n(i_a, i_t);
                 dist_l=Inf; %want to solve for fixed point
                 j=0;%        want to break loop in testing
-                lambda=0.3; %smoothing parameter
+                
                 while dist_l>tol
                     coef_c=g*(1-l_guess)^((1-s)*(1-g));
                     c_euler(i_a)=(RHS/coef_c)^(1/exp_c);
                     l_euler(i_a)=1-(1-g)/g*((1+tc)*c_euler(i_a)/((1-ty)*w*t));
                     %clamp l to grid
-                    %l_euler(i_a)=max(min(l_euler(i_a), 0.99), 0.01);
+                    l_euler(i_a)=max(min(l_euler(i_a), 0.9999), 0.0);
                     dist_l=abs(l_guess-l_euler(i_a));
-                    l_guess=lambda*l_guess+(1-lambda)*l_euler(i_a);
+                    l_guess=lambda_l*l_guess+(1-lambda_l)*l_euler(i_a);
                     j=j+1;
-                    if j>80
+                    if j>80 % don't need that many iterations since we still have outer loop
                         break
                     end % max iterations
                 end % intratemporal optimization
                 % back out wealth from budget constaint
                 a_euler(i_a)=((1+tc)*c_euler(i_a)+a_grid(i_a)-(1-ty)*w*t*l_guess)/(1+r*(1-ty));
+              
             end % finishing making functions for current wealth
             for i_a=1:n_a   % need to interpolate
                 a=a_grid(i_a);
                 a_opt=max(min(interp1(a_euler, a_grid, a, 'linear', 'extrap'), a_grid(n_a)), a_grid(1));    %clamp to grid
-                c_opt=max(interp1(a_euler, c_euler, a, 'linear', 'extrap'), 1e-8);% consumption must be positive;
-                l_opt=max(min(interp1(a_euler, l_euler, a, 'linear', 'extrap'), 0.9999), 0.0);  %clamp to grid
-
-
+                %c_opt=max(interp1(a_euler, c_euler, a, 'linear', 'extrap'), 1e-8);% consumption must be positive;
+                %l_opt=max(min(interp1(a_euler, l_euler, a_opt, 'linear', 'extrap'), 0.9999), 0.0);  %clamp to grid
+                %a_opt=max(min((((1+tc)*c_opt+a-(1-ty)*w*t*l_opt))/(1+r*(1-ty)),a_grid(n_a)),a_grid(1)) ;
+                c_opt=max(BC(l_euler(i_a), a_grid(i_a), a_opt, t),1e-8);       
                 % store Coleman operator
                 Tx(i_a, i_t)=c_opt;
                 Tg(i_a, i_t)=a_opt;
-                Tn(i_a, i_t)=l_opt;
+                Tn(i_a, i_t)=l_euler(i_a);
             end     %over investment
         end %over stochastic state space
         
         dist_c=norm(x_a-Tx, Inf);
-        x_a=Tx;
-        g_a=Tg;
-        n=Tn;
-        %g_a=Tg;
+        x_a=lambda_t*x_a+(1-lambda_t)*Tx;
+        g_a=lambda_t*g_a+(1-lambda_t)*Tg;
+        n=lambda_t*n+(1-lambda_t)*Tn;
         if i>1000
             break
         end
@@ -327,6 +327,7 @@ function [a,c,l, G, r, w, psi] = solve_model(a_grid,logtheta, Pr_theta, tau_c, t
         r_star=alpha*(Kb/Lb)^(alpha-1)-delta;   
         w_star=(1-alpha)*(Kb/Lb)^(-alpha);   % only keeping this because I want the number
         z= Kb/Lb-KLs;   %markets clear if z=0
+        fprintf("Solving Model Given tax rates, iteration %d , interest rate is %.4f \n", i, r_star)
     
     %direction of interest rate change
         if z>0  %excess demand for investment
