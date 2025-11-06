@@ -15,7 +15,8 @@ sigma_e=0.2;
 % set number of theta grids
 n_theta=7;
 % define bounds of theta grid in terms of standard deviations
-m=1.96;    %will update probably, but 1.645 is roughly 90%, 1.96 is 95%                                      
+cv=0.01;
+m=icdf('normal', 1-cv/2, 0, 1);   %will update probably, but 1.645 is roughly 90%, 1.96 is 95%                                      
 
 [logtheta, Pr_theta]=tauchen(n_theta, rho, sigma_e, m);
 
@@ -26,10 +27,10 @@ m=1.96;    %will update probably, but 1.645 is roughly 90%, 1.96 is 95%
 
 
 
-ub_a=exp(m); % upper bound is placeholder
-n_a=350; % will adjust this later
-
-a_grid=linspace(0, ub_a, n_a); % lower bound is 0 by condition of model
+ub_a=exp(m)*1.2; % upper bound is placeholder     Currently twice the highest amount of labour productivity
+n_a=500; % will adjust this later 
+%non-linear grid because density is highest in the poorer regions
+a_grid=linspace(0, sqrt(ub_a), n_a).^2; % lower bound is 0 by condition of model
 
 %% Initial rental rate and wage
 % this is a guess
@@ -53,10 +54,13 @@ a_grid=linspace(0, ub_a, n_a); % lower bound is 0 by condition of model
 %w_market=(1-alpha)*(K/L)^alpha;
 
 %% Solve Benchmark Model
-[a_b,c_b,l_b,v_b, G_b, r_b, w_b, psi_b] = solve_model(a_grid,logtheta, Pr_theta, tau_c, tau_y, delta, alpha, beta, gamma, sigma);
+[a_b,c_b,l_b, G_b, r_b, w_b, psi_b] = solve_model(a_grid,logtheta, Pr_theta, tau_c, tau_y, delta, alpha, beta, gamma, sigma);
+v_b=recover_value(a_grid, a_b, c_b, l_b, beta, gamma, sigma, Pr_theta);
 
 %% Solve Proposal Economy
-[a_r,c_r,l_r,v_r, r_r, w_r, tau_r, psi_r] = solve_reform(a_grid,logtheta, Pr_theta, delta, alpha, beta, gamma, sigma,G_b);
+[a_r,c_r,l_r, r_r, w_r, tau_r, psi_r] = solve_reform(a_grid,logtheta, Pr_theta, delta, alpha, beta, gamma, sigma,G_b);
+v_r=recover_value(a_grid, a_r, c_r, l_r, beta, gamma, sigma, Pr_theta);
+
 
 
 
@@ -248,20 +252,18 @@ end
 function [K,L,C,G] = aggregates(a, n, x, psi, theta, ty, tc,d,alpha)
     %get dimensions
     [na,nt]=size(a);
-    k=0;
-    l=0;
-    c=0;
-    for i=1:na
-        for j=1:nt
-            t=exp(theta(j));
-            k=k+a(i,j)*psi(i,j);
-            l=l+t*n(i,j)*psi(i,j);
-            c=c+x(i,j)*psi(i,j);
-        end
+    t=exp(theta);
+    k=zeros(1, nt);
+    l=zeros(1,nt);
+    c=zeros(1,nt);
+    for i=1:na  %sum across all investment decisions
+            k=k+sum(a(i,:).*psi(i,:));
+            l=l+sum(t.*n(i,:).*psi(i,:));
+            c=c+sum(x(i,:).*psi(i,:));
     end
-    K=k;
-    L=l;
-    C=c;
+    K=sum(k);
+    L=sum(l);
+    C=sum(c);
     Y=K^alpha*L^(1-alpha);
     G=ty*(Y-K*d)+tc*C;
 end
@@ -302,7 +304,8 @@ function [V]= recover_value(a_grid, a_star, c_star, l_star, b, g, s, Ptheta)
     end
     V=Tv;
 end
-function [a,c,l,v, G, r, w, psi] = solve_model(a_grid,logtheta, Pr_theta, tau_c, tau_y, delta, alpha, beta, gamma, sigma)
+%% Model Solving
+function [a,c,l, G, r, w, psi] = solve_model(a_grid,logtheta, Pr_theta, tau_c, tau_y, delta, alpha, beta, gamma, sigma)
     %define ub and lb of interest rates
     r_lo=0;
     r_hi=1;
@@ -336,7 +339,6 @@ function [a,c,l,v, G, r, w, psi] = solve_model(a_grid,logtheta, Pr_theta, tau_c,
         end
 
     end
-    v=recover_value(a_grid, ab, cb, lb, beta, gamma, sigma, Pr_theta);
     a=ab;
     c=cb;
     l=lb;
@@ -347,18 +349,19 @@ function [a,c,l,v, G, r, w, psi] = solve_model(a_grid,logtheta, Pr_theta, tau_c,
 end
 
 %% Tax Reform
-function [a,c,l,v, r, w, tau_c, psi] = solve_reform(a_grid,logtheta, Pr_theta, delta, alpha, beta, gamma, sigma,G)
+function [a,c,l,r, w, tau_c, psi] = solve_reform(a_grid,logtheta, Pr_theta, delta, alpha, beta, gamma, sigma,G)
         %start by initializing grid of potential tau_c solutions
-        ntau=15;    %number of potential solutions
-        tau_grid=linspace(0,1, ntau);       
+        ntau=10;    %number of potential solutions
+        tau_grid=linspace(0,4, ntau);       
         dist=G;
-        j=1;    %start the index
+        j=0;    %start the index
         while dist>0 && j<ntau  %This part is becuase I'm assume that government revenue is not strictly increasing in tau_c
+            j=j+1; 
             % that is, I expect some sort of laffer curve behavior
-            [ar,cr,lr,vr, Gr, rr, wr, psir] = solve_model(a_grid,logtheta, Pr_theta, tau_grid(j), 0, delta, alpha, beta, gamma, sigma);
+            [ar,cr,lr, Gr, rr, wr, psir] = solve_model(a_grid,logtheta, Pr_theta, tau_grid(j), 0, delta, alpha, beta, gamma, sigma);
             dist=G-Gr;
-            j=j+1;   % Want to print this to see what range we wind up in
-            fprintf("On grid search iteration %d , Tax rate is %.4f , and budget is %.4f \n", j,tau_grid(j), Gr)
+            % Want to print this to see what range we wind up in
+            fprintf("On grid search iteration %d , Tax rate is %.4f , budget balance is %.4f \n", j,tau_grid(j), dist)
         end % at this point last dist is positive, current dist is negative
         tau_hi=tau_grid(j);
         tau_lo=tau_grid(j-1);
@@ -366,9 +369,9 @@ function [a,c,l,v, r, w, tau_c, psi] = solve_reform(a_grid,logtheta, Pr_theta, d
         while abs(dist)>1e-4
             k=k+1;   %want to see how many iterations
             tau_mid=(tau_lo+tau_hi)/2;
-            [ar,cr,lr,vr, Gr, rr, wr, psir] = solve_model(a_grid,logtheta, Pr_theta, tau_mid, 0, delta, alpha, beta, gamma, sigma);
+            [ar,cr,lr, Gr, rr, wr, psir] = solve_model(a_grid,logtheta, Pr_theta, tau_mid, 0, delta, alpha, beta, gamma, sigma);
             dist=G-Gr;
-            fprintf("On bisection search iteration %d , Tax rate is %.4f , and budget is %.4f \n", k,tau_mid, Gr)
+            fprintf("On bisection search iteration %d , Tax rate is %.4f , and budget balance is %.4f \n", k,tau_mid, dist)
             if dist>0
                 tau_lo=tau_mid;
             elseif dist<0
@@ -381,13 +384,15 @@ function [a,c,l,v, r, w, tau_c, psi] = solve_reform(a_grid,logtheta, Pr_theta, d
         a=ar;
         c=cr;
         l=lr;
-        v=vr;
         r=rr;
         w=wr;
         tau_c=tau_mid;
         psi=psir;
 
 end
+
+
+
 
 
 
