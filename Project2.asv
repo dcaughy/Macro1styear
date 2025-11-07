@@ -34,13 +34,13 @@ a_grid=linspace(0, sqrt(ub_a), n_a).^2; % lower bound is 0 by condition of model
 
 %% Initial rental rate and wage
 % this is a guess
-r=0.10;
+%r=0.10;
 % given by FOCs
-w=(1-alpha)*((delta+r)/alpha)^(alpha/(1-alpha));
+%w=(1-alpha)*((delta+r)/alpha)^(alpha/(1-alpha));
 
 %% Test EGM
 
-[a,c,l]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r, w, 1e-4);
+%[a,c,l]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r, w, 1e-4);
 
 %% Test Stationary Distribution
 
@@ -54,12 +54,32 @@ w=(1-alpha)*((delta+r)/alpha)^(alpha/(1-alpha));
 %w_market=(1-alpha)*(K/L)^alpha;
 
 %% Solve Benchmark Model
-[a_b,c_b,l_b, G_b, r_b, w_b, psi_b] = solve_model(a_grid,logtheta, Pr_theta, tau_c, tau_y, delta, alpha, beta, gamma, sigma);
+[a_b,c_b,l_b, G_b, r_b, w_b, psi_b, Y_b, C_b] = solve_model(a_grid,logtheta, Pr_theta, tau_c, tau_y, delta, alpha, beta, gamma, sigma);
 v_b=recover_value(a_grid, a_b, c_b, l_b, beta, gamma, sigma, Pr_theta);
 
 %% Solve Proposal Economy
-[a_r,c_r,l_r, r_r, w_r, tau_r, psi_r] = solve_reform(a_grid,logtheta, Pr_theta, delta, alpha, beta, gamma, sigma,G_b);
+[a_r,c_r,l_r, r_r, w_r, tau_r, psi_r, Y_r, C_r] = solve_reform(a_grid,logtheta, Pr_theta, delta, alpha, beta, gamma, sigma,G_b);
 v_r=recover_value(a_grid, a_r, c_r, l_r, beta, gamma, sigma, Pr_theta);
+
+%% Compute Welfare Gains
+
+ce1=CE1(v_b, v_r, gamma, sigma);
+cbar1=pseudo_int(ce1, psi_b);
+
+ce2=CE2(v_b, v_r, psi_b, psi_r, gamma, sigma);
+
+%% Save Results
+Vb=sum(sum(v_b.*psi_b));
+Vr=sum(sum(v_r.*psi_r));
+
+
+aggs=[Vb C_b Y_b; Vr, C_r, Y_r];
+agg_row={'Benchmark', 'Reform'};
+agg_column={'V', 'C', 'Y'};
+%running this will make the table ugly
+matrix2latex(aggs, 'aggs.tex', 'rowLabels', agg_row, 'columnLabels', agg_column, 'format', '%.4f');
+
+%% More Results
 
 
 
@@ -144,7 +164,8 @@ function [a_star, c_star, l_star]= EGM(tc, ty, b, s, g, thetas, p_thetas, a_grid
                 j=0;%        want to break loop in testing
                 
                 while dist_l>tol
-                    coef_c=g*(1-l_guess)^((1-s)*(1-g));
+                    % this is defined on each iteration of the loop since we need a guess of labour
+                    coef_c=g*(1-l_guess)^((1-s)*(1-g)); 
                     c_euler(i_a)=(RHS/coef_c)^(1/exp_c);
                     l_euler(i_a)=1-(1-g)/g*((1+tc)*c_euler(i_a)/((1-ty)*w*t));
                     %clamp l to grid
@@ -249,7 +270,7 @@ end
 
 %% Get Aggregates
 
-function [K,L,C,G] = aggregates(a, n, x, psi, theta, ty, tc,d,alpha)
+function [K,L,C,G, Y] = aggregates(a, n, x, psi, theta, ty, tc,d,alpha)
     %get dimensions
     [na,nt]=size(a);
     t=exp(theta);
@@ -305,7 +326,7 @@ function [V]= recover_value(a_grid, a_star, c_star, l_star, b, g, s, Ptheta)
     V=Tv;
 end
 %% Model Solving
-function [a,c,l, G, r, w, psi] = solve_model(a_grid,logtheta, Pr_theta, tau_c, tau_y, delta, alpha, beta, gamma, sigma)
+function [a,c,l, G, r, w, psi, Y, C] = solve_model(a_grid,logtheta, Pr_theta, tau_c, tau_y, delta, alpha, beta, gamma, sigma)
     %define ub and lb of interest rates
     r_lo=0;
     r_hi=1;
@@ -322,7 +343,7 @@ function [a,c,l, G, r, w, psi] = solve_model(a_grid,logtheta, Pr_theta, tau_c, t
         %denote b as benchmark economy
         [ab,cb,lb]=EGM(tau_c, tau_y, beta, sigma, gamma, logtheta, Pr_theta, a_grid, r_init, w_init, 1e-4);
         pb=distribution(a_grid, ab, Pr_theta, 1e-4);
-        [Kb,Lb,Cb,Gb]=aggregates(ab, lb, cb, pb, logtheta, tau_y, tau_c, delta, alpha);
+        [Kb,Lb,Cb,Gb, Yb]=aggregates(ab, lb, cb, pb, logtheta, tau_y, tau_c, delta, alpha);
 
         r_star=alpha*(Kb/Lb)^(alpha-1)-delta;   
         w_star=(1-alpha)*(Kb/Lb)^(-alpha);   % only keeping this because I want the number
@@ -347,10 +368,12 @@ function [a,c,l, G, r, w, psi] = solve_model(a_grid,logtheta, Pr_theta, tau_c, t
     r=r_star;
     w=w_star;
     psi=pb;
+    Y=Yb;
+    C=Cb;
 end
 
 %% Tax Reform
-function [a,c,l,r, w, tau_c, psi] = solve_reform(a_grid,logtheta, Pr_theta, delta, alpha, beta, gamma, sigma,G)
+function [a,c,l,r, w, tau_c, psi, Y,C] = solve_reform(a_grid,logtheta, Pr_theta, delta, alpha, beta, gamma, sigma,G)
         %start by initializing grid of potential tau_c solutions
         ntau=10;    %number of potential solutions
         tau_grid=linspace(0,4, ntau);       
@@ -359,7 +382,7 @@ function [a,c,l,r, w, tau_c, psi] = solve_reform(a_grid,logtheta, Pr_theta, delt
         while dist>0 && j<ntau  %This part is becuase I'm assume that government revenue is not strictly increasing in tau_c
             j=j+1; 
             % that is, I expect some sort of laffer curve behavior
-            [ar,cr,lr, Gr, rr, wr, psir] = solve_model(a_grid,logtheta, Pr_theta, tau_grid(j), 0, delta, alpha, beta, gamma, sigma);
+            [ar,cr,lr, Gr, rr, wr, psir, Yr, Cr] = solve_model(a_grid,logtheta, Pr_theta, tau_grid(j), 0, delta, alpha, beta, gamma, sigma);
             dist=G-Gr;
             % Want to print this to see what range we wind up in
             fprintf("On grid search iteration %d , Tax rate is %.4f , budget balance is %.4f \n", j,tau_grid(j), dist)
@@ -370,7 +393,7 @@ function [a,c,l,r, w, tau_c, psi] = solve_reform(a_grid,logtheta, Pr_theta, delt
         while abs(dist)>1e-4
             k=k+1;   %want to see how many iterations
             tau_mid=(tau_lo+tau_hi)/2;
-            [ar,cr,lr, Gr, rr, wr, psir] = solve_model(a_grid,logtheta, Pr_theta, tau_mid, 0, delta, alpha, beta, gamma, sigma);
+            [ar,cr,lr, Gr, rr, wr, psir, Yr, Cr] = solve_model(a_grid,logtheta, Pr_theta, tau_mid, 0, delta, alpha, beta, gamma, sigma);
             dist=G-Gr;
             fprintf("On bisection search iteration %d , Tax rate is %.4f , and budget balance is %.4f \n", k,tau_mid, dist)
             if dist>0
@@ -389,8 +412,65 @@ function [a,c,l,r, w, tau_c, psi] = solve_reform(a_grid,logtheta, Pr_theta, delt
         w=wr;
         tau_c=tau_mid;
         psi=psir;
+        Y=Yr;
+        C=Cr;
 
 end
+
+%% Welfare Analysis
+function c=CE1(vb, vr, g, s)
+    B=vr-vb;
+    exp=(1-g)*s;
+    c=(((vb-B)./(vr-B)).^(1/exp)-ones(size(vb)));
+
+    
+
+end
+
+%% Integrate welfare gains
+
+function v=pseudo_int(c, psi)
+    %get grid size
+    [na, nt]=size(psi);
+    % intialize table
+    cum_sumc=zeros(6, nt);
+    %get breakdown of distribution
+    total_psi=sum(psi);
+    percentile_upper_bounds=[0.2, 0.4, 0.6, 0.8, 0.9, 1.0];
+    for j=1:nt
+        k=0;    %index wealth level
+        cum_sumt=0; % keep track of CDF
+        for i=1:length(percentile_upper_bounds)
+            while cum_sumt<percentile_upper_bounds(i) && k<na
+                k=k+1;   %increase wealth
+                cum_sumt=cum_sumt+psi(k,j)/total_psi(j);  %keep track of CDF of psi
+                cum_sumc(7-i,j)=cum_sumc(7-i,j)+c(k,j)*psi(k,j)*100; %add to welfare gain
+                fprintf("%d, %d, %0.4f \n", 7-i,j, cum_sumt)
+            end
+        end
+    end
+    v=cum_sumc;
+end
+
+function v= CE2(vr,vb, psib, psir, g, s)
+    e=(1-g)*s;
+    B=vr-vb;
+    Bbar=sum(sum(B.*psib));
+    BBar=Bbar*(ones(size(vb)));
+    numerator=sum(sum(psib.*vb-BBar));
+    denominator=sum(sum(psir.*vr-BBar));
+    v=(numerator/denominator)^(1/e);
+
+end
+
+
+
+
+
+
+
+        
+
 
 
 
