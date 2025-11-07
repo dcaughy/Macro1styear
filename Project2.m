@@ -459,9 +459,9 @@ function v= CE2(vr,vb, psib, psir, g, s)
     B=vr-vb;
     Bbar=sum(sum(B.*psib));
     BBar=Bbar*(ones(size(vb)));
-    numerator=sum(sum(psib.*vb-BBar));
-    denominator=sum(sum(psir.*vr-BBar));
-    v=(numerator/denominator)^(1/e);
+    numerator=sum(sum(psir.*vr-BBar));
+    denominator=sum(sum(psib.*vb-BBar));
+    v=((numerator/denominator)^(1/e)-1)*100;
 
 end
 
