@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.10.15)  7 NOV 2025 15:52
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.10.15)  7 NOV 2025 16:23
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -376,11 +376,11 @@ Package rerunfilecheck Info: File `Project2.out' has not changed.
 Here is how much of TeX's memory you used:
  9579 strings out of 468081
  147891 string characters out of 5425788
- 571143 words of memory out of 5000000
+ 572185 words of memory out of 5000000
  38152 multiletter control sequences out of 15000+600000
  632192 words of font info for 56 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,9n,79p,257b,443s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,9n,79p,297b,443s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/caugh/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/
 cmbx10.pfb><C:/Users/caugh/AppData/Local/Programs/MiKTeX/fonts/type1/public/ams
 fonts/cm/cmmi10.pfb><C:/Users/caugh/AppData/Local/Programs/MiKTeX/fonts/type1/p
@@ -388,7 +388,7 @@ ublic/amsfonts/cm/cmr10.pfb><C:/Users/caugh/AppData/Local/Programs/MiKTeX/fonts
 /type1/public/amsfonts/cm/cmr12.pfb><C:/Users/caugh/AppData/Local/Programs/MiKT
 eX/fonts/type1/public/amsfonts/cm/cmr17.pfb><C:/Users/caugh/AppData/Local/Progr
 ams/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb>
-Output written on Project2.pdf (1 page, 77348 bytes).
+Output written on Project2.pdf (1 page, 78666 bytes).
 PDF statistics:
  43 PDF objects out of 1000 (max. 8388607)
  4 named destinations out of 1000 (max. 500000)
