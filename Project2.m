@@ -73,8 +73,8 @@ Vb=sum(sum(v_b.*psi_b));
 Vr=sum(sum(v_r.*psi_r));
 
 
-aggs=[Vb C_b Y_b; Vr, C_r, Y_r];
-agg_row={'Benchmark', 'Reform'};
+aggs=[Vb C_b Y_b; Vr, C_r, Y_r; Vr-Vb, C_r-C_b,Y_r-Y_b];
+agg_row={'Benchmark', 'Reform', 'Change'};
 agg_column={'V', 'C', 'Y'};
 %running this will make the table ugly
 matrix2latex(aggs, 'aggs.tex', 'rowLabels', agg_row, 'columnLabels', agg_column, 'format', '%.4f');
@@ -422,8 +422,8 @@ end
 %% Welfare Analysis
 function c=CE1(vb, vr, g, s)
     B=vr-vb;
-    exp=(1-g)*s;
-    c=(((vb-B)./(vr-B)).^(1/exp)-ones(size(vb)));
+    exp=(1-s)*g;
+    c=(((vr-B)./(vb-B)).^(1/exp)-ones(size(vb)));
 
     
 
@@ -455,7 +455,7 @@ function v=pseudo_int(c, psi)
 end
 
 function v= CE2(vr,vb, psib, psir, g, s)
-    e=(1-g)*s;
+    e=(1-s)*g;
     B=vr-vb;
     Bbar=sum(sum(B.*psib));
     BBar=Bbar*(ones(size(vb)));
