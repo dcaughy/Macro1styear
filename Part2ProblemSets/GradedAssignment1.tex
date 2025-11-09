@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{geometry}
+\usepackage{amsfonts}
+\geometry{margin=1in}
+\usepackage{mathtools}
+\usepackage{annotate-equations}
+
+
+\author{Derek Caughy}
+\title{ECO2100 Part 2 Homework 1}
+\date{November 13, 2025}
+\begin{document}
+\maketitle
+\section*{a)}
+Social welfare is given by:\\
+\\
+\begin{equation*}
+	S=\tikzmarknode{production}{f(k)}\tikzmarknode{employed}{(1-u)}-\tikzmarknode{costs}{vk}
+\end{equation*}
+\annotate[yshift=1em]{left}{production}{Production of firm in match}
+\annotate[yshift=0.5em]{above}{employed}{Number of matches}
+\annotate[yshift=-0.5em]{below}{costs}{total cost of vacancies}\\
+\\
+With the constraint:
+\[u=\frac{\delta}{\delta+\frac{m(\lambda)}{\lambda}}\]
+Which can be re-written
+\[u=\frac{\lambda\delta}{\lambda\delta+m(\lambda)}\]
+Also note that 
+\[u=v\frac{u}{v}=v\lambda\iff v=\frac{u}{\lambda}\]
+Thus the Planner's problem becomes
+\[\max_{\lambda, k} f(k)(1-\frac{\lambda\delta}{\lambda\delta+m(\lambda)})-k \frac{\delta}{\lambda\delta+m(\lambda)}\]
+
+\section*{b)}
+First, we can simplify the above funtion to 
+\[f(k)(\frac{m(\lambda)}{\lambda\delta+m(\lambda)})-k\frac{\delta}{\lambda\delta+m(\lambda)}\]
+\[=\frac{f(k)m(\lambda)-k\delta}{\lambda\delta+m(\lambda)}\]
+Taking the first order condition with respect to capital yields:
+\[\frac{m(\lambda)f'(k)-\delta}{\lambda\delta+m(\lambda)}=0\]
+\[\iff m(\lambda)f'(k)=\delta\]
+The first order condition with respect to $\lambda$
+\[\frac{m'(\lambda)f(k)\bigl(\lambda\delta+m(\lambda)\bigr)-\bigl(\delta+m'(\lambda)\bigr)\bigl(f(k)m(\lambda)-k\delta\bigr)}{\bigl(\lambda\delta+m(\lambda)\bigr)^2}=0\]
+\[\iff m'(\lambda)f(k)\bigl(\lambda\delta+m(\lambda)\bigr)-\bigl(\delta+m'(\lambda)\bigr)\bigl(f(k)m(\lambda)-k\delta\bigr)=0\]
+
+
+
+\end{document}
