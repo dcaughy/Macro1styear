@@ -22,25 +22,59 @@ Social welfare is given by:\\
 \annotate[yshift=0.5em]{above}{employed}{Number of matches}
 \annotate[yshift=-0.5em]{below}{costs}{total cost of vacancies}\\
 \\
-With the constraint:
-\[u=\frac{\delta}{\delta+\frac{m(\lambda)}{\lambda}}\]
-Which can be re-written
-\[u=\frac{\lambda\delta}{\lambda\delta+m(\lambda)}\]
-Also note that 
-\[u=v\frac{u}{v}=v\lambda\iff v=\frac{u}{\lambda}\]
-Thus the Planner's problem becomes
-\[\max_{\lambda, k} f(k)(1-\frac{\lambda\delta}{\lambda\delta+m(\lambda)})-k \frac{\delta}{\lambda\delta+m(\lambda)}\]
+Note that we want to solve the steady state level of unemployment. First note that\\
+\\
+\begin{equation*}
+	\tikzmarknode{utime}{\dot{u}}=\tikzmarknode{destruction}{\delta(1-u)}-\tikzmarknode{creation}{\frac{m(\lambda)}{\lambda}u}
+\end{equation*}
+\annotate[yshift=0.5em]{left}{utime}{change in unemployment across time, =0 in steady state}
+\annotate[yshift=-1em]{below}{destruction}{rate of job destruction times employed}
+\annotate[yshift=0.5em]{right}{creation}{mathcing rate of unemployed workers times unemployed}
+\\
+Thus in steady state:
+\[0=\delta -(\delta+\frac{m(\lambda)}{\lambda})u\]
+\[\iff u=\frac{\delta}{\delta+\frac{m(\lambda)}{\lambda}}=\frac{\lambda\delta}{\lambda\delta+m(\lambda)}\]
+Furthermore, note that
+\[\lambda=\frac{u}{v} \iff v=\frac{u}{\lambda}=\frac{\delta}{\lambda\delta+m(\lambda)}\]
+Thus we can write the social planner's problem
+\begin{align*}
+	\max_{\lambda\geq0, k>0} &f(k)\frac{m(\lambda)}{\lambda\delta+m(\lambda)}-k\frac{\delta}{\lambda\delta+m(\lambda)}\\
+\end{align*}
+The Lagrangian can be written as:
+\[\mathcal{L}(\lambda, k, \mu_1, \mu_2)=\frac{f(k)m(\lambda)-k\delta}{\lambda\delta+m(\lambda)}+\mu_1(k-\epsilon)+\mu_2\lambda\]
+where $\epsilon>0$ is an arbitrary constant.
 
 \section*{b)}
-First, we can simplify the above funtion to 
-\[f(k)(\frac{m(\lambda)}{\lambda\delta+m(\lambda)})-k\frac{\delta}{\lambda\delta+m(\lambda)}\]
-\[=\frac{f(k)m(\lambda)-k\delta}{\lambda\delta+m(\lambda)}\]
-Taking the first order condition with respect to capital yields:
-\[\frac{m(\lambda)f'(k)-\delta}{\lambda\delta+m(\lambda)}=0\]
-\[\iff m(\lambda)f'(k)=\delta\]
-The first order condition with respect to $\lambda$
-\[\frac{m'(\lambda)f(k)\bigl(\lambda\delta+m(\lambda)\bigr)-\bigl(\delta+m'(\lambda)\bigr)\bigl(f(k)m(\lambda)-k\delta\bigr)}{\bigl(\lambda\delta+m(\lambda)\bigr)^2}=0\]
-\[\iff m'(\lambda)f(k)\bigl(\lambda\delta+m(\lambda)\bigr)-\bigl(\delta+m'(\lambda)\bigr)\bigl(f(k)m(\lambda)-k\delta\bigr)=0\]
+First note, that $\epsilon$ is arbitrary, therefore we can always choose some $\epsilon$ such that $k>\epsilon>0$, thus by complementary slackness $\mu_1=0$. Secondly, for finite 
+The first order conditions are written as follows:
+\begin{align*}
+	\frac{f'(k)m(\lambda)-\delta}{\lambda\delta+m(\lambda)}&=0 \tag{k}\\
+	\frac{f(k)m'(\lambda)\bigl(\lambda\delta+m(\lambda)\bigr)-\bigl(\delta+m'(\lambda)\bigr)\bigl(f(k)m(\lambda)-k\delta\bigr)}{\bigl(\lambda\delta+m(\lambda)\bigr)^2}+\mu_2&=0 \tag{$\lambda$}\\
+\end{align*}
+Inspecting condition (k) and taking the limit as $\lambda \rightarrow 0$ reveals that $\lambda\neq 0$. That is, 
+\[\lim_{\lambda\rightarrow 0}\frac{f'(k)m(\lambda)-\delta}{\lambda\delta+m(\lambda)}=\frac{-\delta}{\infty}<0\]
+By complementary slackness, it follows that $\mu_2=0$
+Now inspect FOC ($\lambda$) we can derive:
+\[f(k)m'(\lambda)\bigl(\lambda\delta+m(\lambda)\bigr)-\bigl(\delta+m'(\lambda)\bigr)\bigl(f(k)m(\lambda)-k\delta\bigr)=0\]
+by the denominator necessairily being nonzero. This can be simplified:
+\[\lambda f(k)m'(\lambda)-f(k)m(\lambda)+k\bigl(\delta+m'(\lambda)\bigr)=0\]
+
+
+\section*{c)}
+\begin{align}
+	rJ(k)&=f(k)-w-\delta\bigl(J(k)-V(k)\bigr) \label{J} \tag{i}\\
+	rV(k)&=-k+m(\lambda)\bigl(J(k)-V(k)\bigr) \label{V} \tag{ii} \\
+	rW(k)&=w -\delta \bigl(W(k)-U(k)\bigr) \label{W} \tag{iii} \\
+	rU(k)&=\frac{m(\lambda)}{\lambda}\bigl(W(k)-U(k)\bigr) \label{U} \tag{iv}
+\end{align}
+
+\section*{d)}
+
+First, note that by $k=\bar{k}$ that the above Bellman equations are no longer functions of k. Furthermore, the equilibrium wage rate will be given by Nash Bargaining. That is 
+
+\[w=\arg\max_\beta (W-U)^\beta(J-V)^{(1\beta)}\]
+\[=\arg\max_\beta \beta \ln(W-U)+(1-\beta)\ln(J-V)\]
+
 
 
 
