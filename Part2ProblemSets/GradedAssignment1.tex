@@ -58,6 +58,16 @@ Now inspect FOC ($\lambda$) we can derive:
 \[f(k)m'(\lambda)\bigl(\lambda\delta+m(\lambda)\bigr)-\bigl(\delta+m'(\lambda)\bigr)\bigl(f(k)m(\lambda)-k\delta\bigr)=0\]
 by the denominator necessairily being nonzero. This can be simplified:
 \[\lambda f(k)m'(\lambda)-f(k)m(\lambda)+k\bigl(\delta+m'(\lambda)\bigr)=0\]
+\[\iff \bigl(\lambda m'(\lambda)-m(\lambda)\bigr)f(k)+k\bigl(\delta+m'(\lambda)\big)=0\]
+\[\iff \bigl(1-\frac{m(\lambda)}{\lambda m'(\lambda)}\bigr)f(k)+k\bigl(\frac{\delta}{\lambda m'(\lambda)}+\frac{1}{\lambda}\bigr)=0\]
+Define
+\[\eta(\lambda)=\frac{m(\lambda)}{\lambda m'(\lambda)}\]
+Then re-write the above:
+\[\bigl(1-\eta(\lambda)\bigr)+k\bigl(\delta \eta(\lambda) m(\lambda)+\bigr)\]
+
+
+
+
 
 
 \section*{c)}
@@ -72,8 +82,49 @@ by the denominator necessairily being nonzero. This can be simplified:
 
 First, note that by $k=\bar{k}$ that the above Bellman equations are no longer functions of k. Furthermore, the equilibrium wage rate will be given by Nash Bargaining. That is 
 
-\[w=\arg\max_\beta (W-U)^\beta(J-V)^{(1\beta)}\]
+\[w=\arg\max_\beta (W-U)^\beta(J-V)^{(1-\beta)}\]
 \[=\arg\max_\beta \beta \ln(W-U)+(1-\beta)\ln(J-V)\]
+The first order condition yields:
+\[\beta\frac{\frac{\partial W}{\partial w}}{W-U}+(1-\beta)\frac{\frac{\partial J}{\partial w}}{J-V}=0\]
+The partial derivatives come from the fact that W and J are functions of w, while V and U are not. Re-writing \ref{W}:
+\[W=\frac{w-\delta U}{r+\delta}\]
+Doing the same for J in terms of \ref{J} yields:
+\[J=\frac{f(k)-w-\delta V}{r+\delta}\]
+It becomes obvious that $\frac{\partial W}{\partial w}=-\frac{\partial J}{\partial w}$ thus the first order condition can be re-written:
+\[\beta\frac{1}{W-U}-(1-\beta)\frac{1}{J-V}=0\]
+\[\iff \beta(J-V)=(1-\beta)(W-U)\]
+Now we note the free entry condition which means that $V=0$ we can re-write the FOC to be:
+\begin{equation*}
+	\eqnmarkbox[blue]{WU}{W-U}=\beta\bigl(W-U+\eqnmarkbox[red]{J2}{J}\bigr)
+\end{equation*}
+\annotate[yshift=-1em]{below}{WU}{$=\frac{w-rU}{r+\delta}$ from \ref{W}}
+\annotate[yshift=-1em]{below}{J2}{$=\frac{f(k)-w}{r+\delta}$ from \ref{J}}\\
+\\
+\[\iff \frac{w-rU}{r+\delta}=\frac{\beta}{r+\delta}(f(k)-rU)\]
+\begin{equation}
+	\iff rU(\beta-1)=\beta f(k)-w \label{FOC} \tag{garbage}
+\end{equation}
+From the FOC we can also derive:
+\[W-U=\frac{\beta}{1-\beta}J\]
+From \ref{V} we can obtain
+\[J=\frac{k}{m(\lambda)}\]
+Thus:
+\[W-U=\frac{\beta}{1-\beta}\frac{k}{m(\lambda)}\]
+Which can be subsititued into \ref{U} to obtain
+\[rU=\frac{m(\lambda)}{\lambda}\frac{\beta}{1-\beta}\frac{k}{m(\lambda)}=\frac{\beta}{1-\beta}\frac{k}{\lambda}\]
+Substituing into \ref{FOC} and doing some simplifying:
+\[-\beta \frac{k}{\lambda}=\beta f(k)-w\]
+\[\iff w=\beta(f(k)+\frac{k}{\lambda})\]
+Now inspect \ref{V} using J from \ref{J}
+\[0=-k+m(\lambda)\frac{f(k)-w}{r+\delta}\]
+\[\iff w=f(k)-\frac{r+\delta}{m(\lambda)}k\]
+Thus
+\[\beta(f(k)+\frac{k}{\lambda})=f(k)-\frac{r+\delta}{m(\lambda)}k\]
+\[\iff (1-\beta) f(k)-k\bigl(\frac{\beta}{\lambda}+\frac{r+\delta}{m(\lambda)}\bigr)=0\]
+
+
+
+
 
 
 
