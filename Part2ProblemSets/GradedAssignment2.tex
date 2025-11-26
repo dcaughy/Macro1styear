@@ -1,0 +1,94 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{annotate-equations}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Econ 2100 Graded Assignment 2}
+\author{Derek Caughy}
+\date{November 27, 2025}
+
+\begin{document}
+\maketitle
+
+\section{}
+Begin by writing the flow equations for each variable and the feasibility condition
+\begin{align*}
+\dot{S}&=\delta(I+R)-pS \tag{1}\\
+\dot{I}&=pS-(\gamma+\delta)I\tag{2}\\
+\dot{R}&=\gamma I-\delta R\tag{3}\\
+\end{align*}
+Note that in steady state the LHS of all three equations are equal to zero. The feasibility condition yields
+\[I+R=1-S\]
+substitute into equation (1)
+\begin{align*}
+0&=\delta(1-S)-pS\\
+\iff S(p+\delta)&=\delta\\
+\iff S&=\frac{\delta}{p+\delta}
+\end{align*}
+Substitude this into equation (2)
+\begin{align*}
+(\gamma+\delta)I&=\frac{p\delta}{p+\delta}\\
+\iff I&=\frac{p\delta}{(\gamma+\delta)(p+\delta)}
+\end{align*}
+Equation (3) yields
+\begin{align*}
+R&=\frac{\gamma I}{\delta}\\
+&=\frac{\gamma p}{(\gamma+\delta)(p+\delta)}
+\end{align*}
+The First Order derivative of S is
+\[\frac{p}{(p+\delta)^2}>0\]
+Because suceptible people who die are replace immediately with the same number of suceptible people, this result is unsurprising. As $\delta$ increases the inflow of new agents to the model increases thus the steady state level of S increases. The steady state will account for there being more new agents in the stationary distribution. Notably the second order derivative will be negative. The effect of new agent inflow is decreasing likely due to the fact that the other steady state measures will be net decreasing in $\delta$\\
+\\
+The first order derivative of I with respect to $\delta$ yields:
+\begin{align*}
+\frac{p(\gamma p+\gamma\delta+p\delta+\delta^2)-(\gamma+p+2\delta)p\delta}{(\gamma p+\gamma\delta+p\delta+\delta^2)^2}&>0\\
+\iff\frac{p^2\gamma-p\delta^2}{(\gamma p+\gamma\delta+p\delta+\delta^2)^2}&>0\\
+\iff p^2\gamma &>p\delta^2\\
+\iff \gamma p &>\delta^2
+\end{align*}
+Also note thet the first order derivative (seen by inspecting the simpliefied expression in line 2) is monotonically decreasing in $\delta$. That is, we can conclude, for low values of $\delta$ the steady state level of I is increasing, while after the relevant threshold, I is decreasing. This non-monotonicity stems from the fact that $\delta$ increases not only outflows directly from I, but also inflows from S, as all agents that flow out of the model are replace by new agents in S. \\
+\\
+It's obvious without taking derivatives that R is decreasing in $\delta$. The only inflow to R comes through I. At no point will the inflow from S to I to R will increase more than the outflow directly from R induced through death. 
+\section{}
+\[rV_R=\max_x u(x)+\delta (V_d-V_r) = \max_x 1-(1-x)^2-\delta V_r\]
+Because there is no state variable, the optimal (x) is given by simply maximizaing flow payoffs with respect to x. The first order condition is:
+\[2-2x=0\iff x=1\]
+Thus the optimal value of the value function is given by
+\[V_r=\frac{1}{r+\delta}\]
+\section{}
+\[rV_S=\max_x 1-(1-x)^2+xf(I)(V_I-V_S)-\delta V_S\]
+\section{}
+Start by writing the bellman equation for $V_I$:
+\begin{align*}
+rV_I&=\gamma (V_r-V_I)+\delta(V_d-V_I)\\
+\iff (r+\gamma+\delta)V_I&=\gamma V_R\\
+\iff V_I&=\frac{\gamma}{(r+\delta)(r+\delta+\gamma)}
+\end{align*}
+\section{}
+
+Becuase $V_S$ is the optimum of the social interaction choice it follows that  $V_S\geq V(x)$, where $V(x)$ is the lifetime expected payoff function given a choice of $x$ for a suceptible person. Let $V=V(1)$. It follows that
+\begin{align*}
+rV&=1+f(I)(V_I-V)-\delta V\\
+\iff (r+\delta)V-1&=f(I)(V_I-V)\\
+\\\iff V&=\frac{1+f(I)V_I}{r+\delta+f(I)}\\
+\\ \iff V-V_I&=\frac{1+f(I)V_I-\bigl(1+\delta+f(I)\bigr)V_I}{r+\delta+f(I)}\\
+&=\frac{1-(r+\delta)V_I}{r+\delta+f(I)}\\
+&=\frac{1-\frac{\gamma}{r+\delta+\gamma}}{r+\delta+f(I)}\\
+&=\frac{r+\delta}{(r+\delta+\gamma)(r+\delta+f(I))}>0\\
+\implies V&>V_I
+\end{align*}
+Thus $V_S>V_I$
+\section{}
+The first order condition can be written
+\begin{align*}
+2-2x+f(I)(V_I-V_S)=0\\
+x=\frac{2+f(I)(V_I-V_S)}{2}
+\end{align*}
+Notably, since $f(I)>0$ and $V_I-V_S>0$ it follows that
+\[x_S^*<1\]
+This implies that infection risk reduces suceptible people's choice of social interaction. Compared to the recovered individuals who are not at risk of becoming infected again, suceptible people will engage in less social interaction.
+
+\section{}
+While the result in question 6 points to the equilibrium being efficient, as it would appear the suceptible people internalize the risk of being infected when making their social interaction decision, they do not internalize the externality associated with infecting other people. \textbf{The equilibrium is not efficient.} The above results only hold for the stationary distribution of this SIR model. In particular, the results above do not demonstrate the externality applied to the transition path of each agent in the model. Over time a higher level of $x$ will yield higher levels of $I$ and thus increasing disutility on other susceptible agents, since $f'(I)>0$. Because the social interaction decisions is made using only the current period level of $I$, this externality is not internalzed by susceptible people. 
+\end{document}
