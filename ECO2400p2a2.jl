@@ -18,11 +18,225 @@ end
 # ╔═╡ edf08a90-f85e-4ea3-90ef-7c718b146a99
 md"""
 # Quesion 1
+## (a)
+
+$$l(y|\theta)=-\ln(\Gamma(\rho))+\rho \ln(\lambda)+(\rho-1) \ln(y)-\lambda y$$
+
+$$L_n(Y|\theta)=\sum^n_{i=1} -\ln(\Gamma(\rho))+\rho \ln(\lambda)+(\rho-1) \ln(y_i)-\lambda y_i$$
+"""
+
+# ╔═╡ a68f494a-2c33-49f0-9e50-d3572d11c2eb
+md"""
+## (b)
+The first order derivatives are
+
+$$[\rho]:\sum^n_{i=1} -\frac{\Psi(\rho)\Gamma{\rho}}{\Gamma(\rho)}+\ln(\lambda)+\ln(y_i)$$
+$$[\lambda]:\sum^n_{i=1} \frac{\rho}{\lambda}-y_i$$
+
+The second order derivatives are
+
+$$[\rho]:-n\int_0^\infty \frac{te^{-\rho t}}{1-e^{-t}}dt$$
+$$[\lambda]: -\frac{n\rho}{\lambda^2}$$
+$$[\text{cross terms}]: \frac{n}{\lambda}$$
+Thus the Fisher Informtaion Matrix is:
+
+$$\begin{bmatrix}
+	\frac{\partial\Psi(\rho_0)}{\partial \rho} & -\frac{1}{\lambda}\\
+	-\frac{1}{\lambda} & \frac{\rho}{\lambda^2}
+\end{bmatrix}$$
+
+The asymptotic variance is given by
+
+$$\frac{1}{\frac{\partial\Psi(\rho_0)}{\partial \rho}\frac{\rho}{\lambda^2}-\frac{1}{\lambda^2}}\begin{bmatrix}
+	\frac{\rho}{\lambda^2} & \frac{1}{\lambda}\\
+	\frac{1}{\lambda} & \frac{\partial\Psi(\rho_0)}{\partial \rho}
+\end{bmatrix}$$
+
+Which can be simplified to
+
+$$\frac{\lambda^2}{\rho\frac{\partial\Psi(\rho_0)}{\partial \rho}-1}\begin{bmatrix}
+	\frac{\rho}{\lambda^2} & \frac{1}{\lambda}\\
+	\frac{1}{\lambda} & \frac{\partial\Psi(\rho_0)}{\partial \rho}
+\end{bmatrix}$$
+"""
+
+# ╔═╡ 53617a28-fbb4-430a-adeb-4af88746b8a2
+md"""
+## (c)
+
+Because the null hypothesis only places contraints on a single parameter, it makes sense to use the largange multiplier test. Here the constraint is $\rho=0$.
+
+The Lagrangian is written:
+
+$$\mathcal{L}= \frac{1}{n}L_n(Y|\theta)-\mu(\rho-1)$$
+
+The new first order condition for $\rho$ becomes
+
+$$[\rho]:\frac{1}{n}\sum^n_{i=1} -\Psi(\rho)+\ln(\lambda)+\ln(y_i)=\mu$$
+
+The First order derivative for $\lambda$ is unchanged and can be written:
+
+$$\bar{y}=\frac{1}{n}\sum y_i=\frac{\rho}{\lambda}$$
+
+$$\iff \hat{\lambda}=\frac{1}{\bar{y}}$$
+
+The FOC for $\mu$ simply yields
+
+$$\hat{\rho}=1$$
+
+It follows that 
+
+$$\hat{\mu}=-\Psi(1)+\ln(\frac{1}{\bar{y}})+\frac{1}{n}\sum_{i=1}^n\ln{y_i}$$
+
+For ease of notation let $\bar{\gamma}=\frac{1}{n}\sum_{i=1}^n\ln{y_i}$
+
+The test statistic can be written
+
+$$\zeta^{LM}_n=n\hat{\mu}^2(1,0)\mathbb{I}_{\hat{\theta}}^{-1}(1,0)'$$
+
+$$=n\frac{(-\Psi(1)-\ln(\bar{y})+\bar{\gamma})^2}{\bar{y}^2(\frac{\partial\Psi(1)}{\partial \rho}-1)}\begin{bmatrix}
+	1 & 0 \end{bmatrix}\begin{bmatrix}
+	\bar{y}^2 & \bar{y}\\
+	\bar{y} & \frac{\partial\Psi(1)}{\partial \rho}
+\end{bmatrix}\begin{bmatrix}
+	1 \\
+	0
+\end{bmatrix}$$
+
+$$=n\frac{(-\Psi(1)-\ln(\bar{y})+\bar{\gamma})^2}{(\frac{\partial\Psi(1)}{\partial \rho}-1)}$$
+
+Note that the dimension reduction from two parameters to one means that the test statistic has a $\chi^2(1)$ distriution.
+
+To test at an $\alpha$ confidence level define the test
+
+$$\phi(Y)=\begin{cases}
+	1 & \zeta^{LM}_n > \chi^2_{1-\alpha}(1)\\
+	0 & \zeta^{LM}_n \leq \chi^2_{1-\alpha}(1)
+\end{cases}$$
 """
 
 # ╔═╡ 096cc923-915e-4ca9-855d-5dd9c1bc2ac7
 md"""
 # Quesion 2
+## (a)
+
+$$E\bigl(X_i(Y_i-\Phi(X_i'\beta_0))\bigr)=E\bigl(E\bigl(X_i(Y_i-\Phi(X_i'\beta_0))|X_i\bigr)\bigr)$$
+
+$$=E\bigl(X_i(E(Y_i|X_i)-\Phi(X_i'\beta_0))\bigr)$$
+$$=E\bigl(X_i(Pr(Y_i=1|X_i)-\Phi(X_i'\beta_0))\bigr)$$
+$$=E\bigl(X_i(\Phi(X_i'\beta_0)-\Phi(X_i'\beta_0))\bigr)$$
+$$=0$$
+"""
+
+# ╔═╡ e66d9e21-fba6-4dd6-ba76-56f6d8252035
+md"""
+
+## (b)
+Note that both X_i, \beta_0\in \mathbb{R}^d, thus the test stattistic for the moment condition will have zero degrees of freedom, which means that any test with these moment equations will have no power. The moment condition can not be used to test whether the model is correctly specified.
+
+Because $E(u_i|X)=0$ We can construct an instrument $g(X_i)\in \mathbb{l}$ where l>d, then the moment equation
+
+$$E(g(X_i)(Y_i-\Phi(X_i'\beta_0)))=0$$
+
+can be tested with the over-identifying-conditions test.
+"""
+
+# ╔═╡ 231f0bb1-e7e9-448d-89f7-73c4f36b1516
+md"""
+## (c)
+The first order derivative of the conditional log-likelihood is
+
+$$\sum Y_iX_i\frac{\phi(X_i'\beta)}{\Phi(X_i'\beta)}+(1-Y_i)X_i\frac{-\phi(X_i\beta)}{1-\Phi(X_i'\beta)}$$
+$$=\sum (2Y_i-1)X_i\phi(X_i'\beta)\frac{1-\Phi(X_i'\beta)+\Phi(X_i'\beta)}{\Phi(X_i'\beta)(1-\Phi(X_i'\beta))}$$
+
+Dropping the sum becuase it doesn't actually matter
+
+$$=(2Y_i-1)X_i\phi(X_i\beta)\frac{1}{\Phi(X_i'\beta)\Phi(-X_i'\beta)}$$
+
+The Information matrix is given by the outer product of the first order derivative
+
+$$E(2Y_i-1)^2\phi^2(X_i'\beta)\frac{1}{\Phi^2(X_i'\beta)\Phi^2(-Xi'\beta)}X_iX_i'$$
+
+Noting that $E(2Y_i-1)^2|X=\Phi(X_i'\beta)\Phi(-X_i'\beta)$ (Will be shown in the next question when evaluating $Var(Y)$). We have the result
+
+$$\mathbb{I}_{\beta_0}=E_X \frac{\phi(X_i'\beta)^2X_iX_i'}{\Phi(X_i'\beta_0)\Phi(-X_i'\beta_0)}$$
+
+"""
+
+# ╔═╡ c826ee38-3d8b-4279-99df-2e0217640bbc
+md"""
+## (d)
+From the equation
+
+$$Y_i-h(X_i,\beta_0)=u_i^*$$
+
+To satisfy the condition
+
+$$E\bigl(Y_i-h(X_i,\beta_0)|X_i\bigr)=0 \implies h(X_i,\beta_0)=\Phi(X_i'\beta)$$
+
+Then
+
+$$Var(u_i^*|X_i)=E\bigl((Y_i-\Phi(X_i'\beta_0))^2|X_i\bigr)$$
+
+$$=E\bigl(Y_i^2-2Y_i\Phi(X_i'\beta_0)+\Phi^2(X_i'\beta_0)|X_i)$$
+
+$$=E\bigl(Y_i|X_i)-2E(Y_i|X_i)\Phi(X_i'\beta_0)+\Phi^2(X_i'\beta_0)$$
+
+$$=\Phi(X_i'\beta_0)-\Phi^2(X_i'\beta_0)$$
+$$=\Phi(X_i'\beta_0)(1-\Phi(X_i'\beta_0))$$
+
+Which is obviously heteroskedastic
+"""
+
+# ╔═╡ fc3434ad-b065-40d3-a009-4e86227ec011
+md"""
+## (e)
+
+From the properties of extremum estimators we know that $\beta_1^{NLS}$ and $\beta_1^{MLE}$ are asymptotically normal.
+
+We can construct the confidence interval for both estimates by inverting the t-test for both statistics. Let $s_1^{j}$ be the element in the first row and column of the asymptotic variance of the estimator $\beta^j$. Then we have:
+
+$$|\frac{\sqrt{n}}{s_1^{NLS}}(\beta^{NLS}_1-\beta_{01})|\leq z_{1-\frac{\alpha}{2}}$$
+$$\implies CS_{NLS}=[\beta_1^{NLS}-\frac{2s_1^{NLS}}{\sqrt{n}}z_{1-\frac{\alpha}{2}},\beta_1^{NLS}+\frac{2s_1^{NLS}}{\sqrt{n}}z_{1-\frac{\alpha}{2}}]$$
+$$\implies \hat{l}_{NLLS}=\frac{2s_1^{NLS}}{\sqrt{n}}z_{1-\frac{\alpha}{2}}$$
+
+By the same logic
+
+$$\hat{l}_{MLE}=\frac{2s_1^{MLE}}{\sqrt{n}}z_{1-\frac{\alpha}{2}}$$
+
+It follows that
+
+$$\sqrt{n}(\hat{l}_{NLLS}-\hat{l}_{MLE})=2z_{1-\frac{\alpha}{2}}(s_1^{NLLS}-s_1^{MLE})$$
+
+Because both $s_1$s are finite, MLE is efficient, and NLLS has heteroskedastic standard errors, it follows that 
+
+$$2z_{1-\frac{\alpha}{2}}(s_1^{NLLS}-s_1^{MLE})>0$$
+"""
+
+# ╔═╡ 9250f602-36fc-4587-8550-5c282a7f5f71
+md"""
+
+## (f)
+
+Use generalised least squares
+
+Take the initial equation
+
+$$Y_i=h(X_i,\beta)+u_i^*$$
+
+Divide by the standard deviation of $u_i^*|X_i$, which is $\sqrt{\Phi(X_i'\beta)\Phi(-X_i'\beta)}$
+
+The objective function becomes
+
+$$\hat{\beta}=\arg\min_\beta \frac{1}{2n}\sum_n \bigl(\frac{Y_i-\Phi(X_i'\beta)}{\sqrt{\Phi(X_i'\beta)\Phi(-X_i'\beta)}}\bigr)^2$$
+
+The First order condition is (dropping the sum to make things fit)
+
+$$\frac{2X_i\phi(X_i'\beta)(Y_i-\Phi(X_i'\beta))\Phi(X_i'\beta)\Phi(-X_i'\beta)-(Y_i-\Phi(X_i'\beta))^2(X_i\phi(X_i'\beta)(1-2\Phi(X_i'\beta))))}{\bigl((\Phi(X_i'\beta)\Phi(-X_i'\beta)\bigr)^2}$$
+
+I'm done doing algebra for a bonus question, but due to the magin of the normal distribution the outer product of the above garbage will reduce the the Fisher information Matrix in expectation, implying that the estimation procedure is efficient.
+
+
 """
 
 # ╔═╡ ec30b878-22c7-470f-8ea9-725d56e8b2fa
@@ -126,11 +340,7 @@ Recall that $\tilde{CS}$ is defined by
 $$T\leq \chi_{0.05}^2(k)$$
 $$\iff (\hat{\beta}-\beta^*)\Sigma^{-1}(\hat{\beta}-\beta^*) \leq \chi_{0.05}^2(k)$$
 
-Which can be partialed out by FWL
-
-$$\iff (\hat{\beta}_1-\beta^*_1)(X_1'M_2X_1)(\hat{\beta}_1-\beta^*_1) + (\hat{\beta}_2-\beta^*_2)(X_2'M_1X_2)(\hat{\beta}_2-\beta^*_2) +\Gamma \leq \chi_{0.05}^2(k))$$
-
-By orthogonality of $X_1$ and $X_2$
+Which can be partialed out by orthogonality of $X_1$ and $X_2$
 
 $$\iff (\hat{\beta}_1-\beta^*_1)(X_1'X_1)(\hat{\beta}_1-\beta^*_1) + (\hat{\beta}_2-\beta^*_2)(X_2'X_2)^{-1}(\hat{\beta}_2-\beta^*_2) \leq \chi_{0.05}^2(k))$$
 
@@ -267,12 +477,10 @@ md"""
 The obvious concludion is that the chi squared based confidence interval does not decrease much in sample size, while the typical t test does. There is a slight decrease observing n=30 to n=100.The implication here, is that the sample size does not restrict the possible values of $\beta_1$ under the chi squared test. Extreme values of $\beta_1$ can be of set by the existence of extreme values of $\beta_2$. Meanwhile in the simple t-test, the variance of $\beta_1$ is decreasing in sample size causing the confidence interval to shrink. The decrease in interval length for the tilde test is likely due to the samples of $X_1$ and $X_2$ being more likley to be orthogonal. The lack of correlation between $X_1$ and $X_2$ help to drive the result that the chisquared test statistic can be explained by simultaneous extreme values of the individual elements of $\beta$ 
 """
 
-# ╔═╡ 162a2043-eb65-4fa5-b897-3b09857e830d
-
-
 # ╔═╡ 6b251bb2-0371-485b-b10b-5a8912ffd8ba
 md"""
 # Quesion 5
+## (a)
 """
 
 # ╔═╡ 2a6f5617-c5b2-4b19-9a24-66594a4e452e
@@ -297,9 +505,6 @@ begin
 end
 		
 		
-
-# ╔═╡ d31412be-81d2-4f3d-bdb1-b9e8b74875ee
-
 
 # ╔═╡ ef425e55-5d2b-4925-aa1e-510c5c28f26f
 begin
@@ -343,6 +548,11 @@ begin
 	testreject=hyptest5(testβ, testSE)
 end
 
+# ╔═╡ e86a76d1-365c-451d-ace5-418fa1ee880c
+md"""
+## (b-d)
+"""
+
 # ╔═╡ f2322568-b356-41e6-9294-0b690c9b9f2d
 begin
 	function monte5(n;H=-2:0.1:2, R=500)
@@ -365,6 +575,11 @@ begin
 	plot(-2:0.1:2, testpower)
 end
 
+# ╔═╡ 65d426ea-c30c-43df-af65-27a32fd99379
+md"""
+## (e)
+"""
+
 # ╔═╡ f9c81052-98bd-4ce7-a94f-c3006ececb82
 begin
 	power=[monte5(n) for n in [100, 400, 1000]]
@@ -386,10 +601,119 @@ The change in the function shape makes sense. The alternative is not local asymp
 # ╔═╡ 32792755-0c07-4e90-8ad7-050d71f7fbbc
 md"""
 # Quesion 6
+
+## (a)
+
+$$\hat{\theta}=\arg\min_\theta\frac{1}{2n}\sum_{i=1}^n\bigl(\Psi(Z_i)(Y_i-X_i'\theta))'A_n'A_n \bigl(\Psi(Z_i)(Y_i-X_i'\theta))$$
+
+where $A_n'A_n=Q_n\rightarrow^pQ$
 """
 
 # ╔═╡ ab51d544-075d-4541-adac-fb1fd87568e0
+md"""
 
+## (b)
+
+Let $Q_n=\bigl(\frac{1}{n}\sum^n_{i=1}\hat{U}_i^2\Psi(Z_i)\Psi'(Z_i))^{-1}$
+
+By the assumptions in the question it follows that $Q_n\rightarrow^p(E U_i^2\Psi(Z_i)\Psi'(Z_i))^{-1}$
+
+The first order condition becomes
+
+$$\frac{1}{n}\sum_{i=1}^n X_i\Psi'(Z_i)Q_n\Psi(Z_i)(Y_i-X_i'\theta)=0$$
+
+$$\iff \hat{\theta}=\bigl(\frac{1}{n}\sum_{i=1}^n X_i\Psi'(Z_i)Q_n\Psi(Z_i)X_i'\bigr)^{-1}\bigl(\frac{1}{n}\sum_{i=1}^n X_i\Psi'(Z_i)Q_n\Psi(Z_i)Y_i\bigr)$$
+
+It follows that
+
+$$\sqrt{n}(\hat{\theta}-\theta_0)=\bigl(\frac{1}{n}\sum_{i=1}^n X_i'\Psi'(Z_i)Q_n\Psi(Z_i)X_i'\bigr)^{-1}\bigl(\frac{1}{\sqrt{n}}\sum_{i=1}^n X_i'\Psi'(Z_i)Q_n\Psi(Z_i)U_i\bigr)$$
+
+$$\rightarrow^d \bigl(E X_i\Psi'(Z_i)Q\Psi(Z_i)X_i'\bigr)^{-1}\mathcal{N}(0, E(U_i^2X_i\Psi'(Z_i)Q\Psi(Z_i)\Psi'(Z_i)Q\Psi(Z_i)X_i'))$$
+
+By construction of $Q$ and LIE
+
+$$=^d\biggl (E\biggl(X_i\Psi'(Z_i)\bigl(EU_i^2\Psi(Z_i)\Psi'(Z_i)\bigr)^{-1}\Psi(Z_i)X_i'\biggr)\biggr)^{-1}\mathcal{N}(0,E\biggl(X_i\Psi'(Z_i)\bigl(EU_i^2\Psi(Z_i)\Psi'(Z_i)\bigr)^{-1}\Psi(Z_i)X_i'\biggr))$$
+
+Thus the optimal asymptotic variance of $\hat{\theta}$ in this context is
+
+$$\biggl(E\biggl(X_i\Psi'(Z_i)\biggr)\bigl(EU_i^2\Psi(Z_i)\Psi'(Z_i)\bigr)^{-1}\biggl(E\Psi(Z_i)X_i'\biggr)\biggr)^{-1}=V_\Psi$$
+"""
+
+# ╔═╡ 2ac13575-baf2-43f7-9d05-89db57df63f9
+md"""
+## (c)
+
+Note that
+
+$$V(U_i|Z_i)=E\biggl(\bigl(U_i-E(U_i|Z_i)\bigr)^2|Z_i\biggr)=E(U_i^2|Z_i)$$
+
+Then the asymptotic variance of $\hat{\theta}$ becomes
+
+$$\biggl(E\biggl(X_i\frac{E(X_i|Z_i)'}{E(U_i^2|Z_i)}\biggr)\bigl(EU_i^2\frac{E(X_i|Z_i)}{E(U_i^2|Z_i)}\frac{E(X_i|Z_i)'}{E(U_i^2|Z_i)}\bigr)^{-1}\biggl(E\frac{E(X_i|Z_i)}{E(U_i^2|Z_i)}X_i'\biggr)\biggr)^{-1}$$
+
+By LIE
+
+$$=\biggl(E\biggl(E(X_i|Z_i)\frac{E(X_i|Z_i)'}{E(U_i^2|Z_i)}\biggr)\bigl(EE(U_i^2|Z_i)\frac{E(X_i|Z_i)}{E(U_i^2|Z_i)}\frac{E(X_i|Z_i)'}{E(U_i^2|Z_i)}\bigr)^{-1}\biggl(E\frac{E(X_i|Z_i)}{E(U_i^2|Z_i)}E(X_i'|Z_i)\biggr)\biggr)^{-1}$$
+
+$$=\biggl( E \bigl(\frac{E(X_i|Z_i)E(X_i|Z_i)'}{E(U_i^2|Z_i)}\bigr)\biggr)^{-1}=V_{\Psi^*}$$
+
+To show that $V_{\Psi^*}\leq V_\Psi$ First note that we can re-write both variances as variances of a random vector. For the efficient IV case, let $T_*=E\frac{E(X_i|Z_i)}{E(U_i^2|Z_i)}X_i'\biggr)$
+
+
+
+$$V_{\Psi^*}=E(\bigl(\frac{E(X_i|Z_i)E(X_i|Z_i)'}{E(U_i^2|Z_i)}\bigr)^{-1}U_i\frac{E(X_i|Z_i)}{E(U_i^2|Z_i)}\frac{E(X_i|Z_i)'}{E(U_i^2|Z_i)}U_i'\bigl(\frac{E(X_i|Z_i)E(X_i|Z_i)'}{E(U_i^2|Z_i)}\bigr)^{-1})$$
+
+$$=Var(T_*^{-1}U_i\Psi^*(Z_i))=Var(b)$$
+
+The same logic can be used for $V_\Psi$. Letting $T=E(\Psi(Z_i)X_i')$ and Q be as before
+
+It follows that
+
+$$V_{\Psi}=Var((T'Q T)^{-1}T'Q U_i \Psi(Z_i))=Var(a)$$
+
+Then 
+
+$$Var((T'Q T)^{-1}T'Q U_i \Psi(Z_i)-T_*^{-1}U_i\Psi^*(Z_i))\geq 0$$
+
+The left hand side is equal to
+
+$$V_{\Psi}+V_{\Psi^*}-E(ab')-E(ba')$$
+(this is spreading into multiple lines) (also pretend that I did my brackets correctly)
+$$E(ab')=E(E\biggl(X_i\Psi'(Z_i)\biggr)\bigl(EU_i^2\Psi(Z_i)\Psi'(Z_i)\bigr)^{-1}\biggl(E\Psi(Z_i)X_i'\biggr)\biggr)^{-1}$$
+$$E\biggl(X_i\Psi'(Z_i)\biggr)\bigl(EU_i^2\Psi(Z_i)\Psi'(Z_i)\bigr)^{-1}U_i\Psi(Z_i)\frac{E(X_i|Z_i)'}{E(U_i^2|Z_i)}U_i'\bigl(\frac{E(X_i|Z_i)E(X_i|Z_i)'}{E(U_i^2|Z_i)}\bigr)^{-1})$$
+
+
+Note that
+
+$$E(U_i\Psi(Z_i)\frac{E(X_i|Z_i)'}{E(U_i^2|Z_i)}U_i'\bigl(\frac{E(X_i|Z_i))$$
+
+$$=E(E(U_i^2|Z_i)\Psi(Z_i)\frac{E(X_i|Z_i)}{E(U_i^2|Z_i)})$$
+$$=E(Psi(Z_i)E(X_i|Z_i)')$$
+$$=(E\Psi(Z_i)X_i')$$
+
+Thus $E(ab')=V_{\psi*}$ which is symmetric. I.e. $E(ab')=E(ba')$, thus
+
+$$0\leq V_{\Psi}+V_{\Psi^*}-E(ab')-E(ba')=V_{\Psi}-V_{\Psi^*}$$
+"""
+
+# ╔═╡ 7cfcaeb1-8f04-4b29-ae20-0cc33397fb6f
+md"""
+## (d)
+
+If $\pi=0$ Then
+
+$$E(X_i|Z_i)=E(Z_i\pi+V_i|Z_i)=0$$
+
+It also follows that Identification will fail. In particular
+
+$$E(Z_iU_i)=0$$
+$$\iff E(Z_i(Y_i-X_i\theta_0))=0$$
+$$\iff E(Z_iY_i)=E(Z_iX_i)\theta_0$$
+$$\iff E(Z_iY_i)=E(Z_i(Z_i\pi+V_i))\theta_0$$
+$$\iff \theta_0=\frac{E(Z_iY_i)}{0}$$
+
+here we see that the full column rank assumption must fail becuase $E(Z_iX_i)$ is not invertible. This gives the result that we teach undergrads, that your instrument must have some effect on X to be valid.
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1686,7 +2010,14 @@ version = "1.9.2+0"
 # ╠═313cf7a0-d839-11f0-3062-1366cbe2a7ca
 # ╠═0965f190-96ab-4045-8ae4-b2798908d62a
 # ╠═edf08a90-f85e-4ea3-90ef-7c718b146a99
+# ╠═a68f494a-2c33-49f0-9e50-d3572d11c2eb
+# ╠═53617a28-fbb4-430a-adeb-4af88746b8a2
 # ╠═096cc923-915e-4ca9-855d-5dd9c1bc2ac7
+# ╠═e66d9e21-fba6-4dd6-ba76-56f6d8252035
+# ╠═231f0bb1-e7e9-448d-89f7-73c4f36b1516
+# ╠═c826ee38-3d8b-4279-99df-2e0217640bbc
+# ╠═fc3434ad-b065-40d3-a009-4e86227ec011
+# ╠═9250f602-36fc-4587-8550-5c282a7f5f71
 # ╠═ec30b878-22c7-470f-8ea9-725d56e8b2fa
 # ╠═9d99f602-4d5c-47fc-a9a2-4fbc3bf23fd9
 # ╠═436e637b-c48e-4fad-8ab2-ee4e20bca0f3
@@ -1706,21 +2037,23 @@ version = "1.9.2+0"
 # ╠═03439f5f-a96d-40d2-930a-0070b7d64ab0
 # ╠═92c375a4-35dc-4f44-8db8-28914c593021
 # ╠═aae0d7ef-24da-4bdf-b650-05f47686f82d
-# ╠═162a2043-eb65-4fa5-b897-3b09857e830d
 # ╠═6b251bb2-0371-485b-b10b-5a8912ffd8ba
 # ╠═2a6f5617-c5b2-4b19-9a24-66594a4e452e
-# ╠═d31412be-81d2-4f3d-bdb1-b9e8b74875ee
 # ╠═ef425e55-5d2b-4925-aa1e-510c5c28f26f
 # ╠═f854dc69-2c9d-4404-8bed-230c2445da3a
 # ╠═8c858a69-3692-4bd5-bc55-d42fef4d3ffc
 # ╠═f3903271-5902-4470-a17f-c14724c5cd0f
 # ╠═2d46a559-ae0a-4f68-8c19-131d1270a199
+# ╠═e86a76d1-365c-451d-ace5-418fa1ee880c
 # ╠═f2322568-b356-41e6-9294-0b690c9b9f2d
 # ╠═b7616ed6-e059-4e61-ad78-c847073da3ea
+# ╠═65d426ea-c30c-43df-af65-27a32fd99379
 # ╠═f9c81052-98bd-4ce7-a94f-c3006ececb82
 # ╠═6045e9cf-430d-4ba8-80e6-8b75ac03251a
 # ╠═ade51fd5-2a5e-4bb6-a803-aec2f2967759
 # ╠═32792755-0c07-4e90-8ad7-050d71f7fbbc
 # ╠═ab51d544-075d-4541-adac-fb1fd87568e0
+# ╠═2ac13575-baf2-43f7-9d05-89db57df63f9
+# ╠═7cfcaeb1-8f04-4b29-ae20-0cc33397fb6f
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
